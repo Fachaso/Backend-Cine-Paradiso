@@ -3,6 +3,13 @@
 </div>
 
 # Proyecto Integrador - Sistema de venta de entradas de cine
+
+## 🔗 Estructura del Proyecto
+Este sistema de venta de entradas está compuesto por dos repositorios complementarios:
+
+*   **[Backend (API REST)](https://github.com/Fachaso/Backend-Cine-Paradiso):** Desarrollado en Flask, maneja la lógica de negocio, la conexión a la base de datos MySQL, el sistema de estadísticas y la seguridad de los endpoints.
+*   **[Frontend (Interfaz de Usuario)](https://github.com/lutzio07/Front---Cine-Paradiso):** Contiene tanto la aplicación web de acceso para los usuarios finales como el backoffice para que los administradores configuren las salas y películas.
+
 ## Información de los estudiantes:
 
 * Ramiro Tomas Martinez - 115961 - rtmartinez@fi.uba.ar - https://github.com/Fachaso
