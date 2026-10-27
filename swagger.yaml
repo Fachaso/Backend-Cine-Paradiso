@@ -151,7 +151,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PeliculaDTO'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -203,37 +208,48 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FuncionDetalleDTO'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
 
   /api/peliculas/buscar-externa:
-    post:
+    get:
       tags: [2. Películas y Cartelera]
       summary: Buscar películas en API externa (TMDb / OMDb)
       description: Acceso ADMIN. Facilita la carga administrativa sin sustituir la persistencia local.
       security:
         - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [query]
-              properties:
-                query:
-                  type: string
-                  example: "Gladiator"
+      parameters:
+        - name: query
+          in: query
+          required: true
+          description: Título o palabra clave de la película a buscar en TMDb / OMDb
+          schema:
+            type: string
+            example: "Gladiator"
       responses:
         '200':
           description: Resultados provenientes del proveedor externo
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PeliculaExternaDTO'
 
   # ==========================================================================
   # MÓDULO 3: SUCURSALES, SALAS Y FUNCIONES
@@ -273,7 +289,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SalaDTO'
         '404':
           $ref: '#/components/responses/NotFound'
 
@@ -298,7 +321,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/FuncionDetalleDTO'
     post:
       tags: ["3. Sucursales, Salas y Funciones"]
       summary: Programar nueva función
@@ -317,7 +347,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/FuncionDetalleDTO'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -443,7 +478,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CompraDetalleDTO'
         '400':
           $ref: '#/components/responses/BadRequest'
         '409':
@@ -567,7 +607,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ServicioPublicoDTO'
     post:
       tags: [6. Servicios Adicionales]
       summary: Alta de nuevo servicio adicional
@@ -622,7 +669,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CupoServicioFuncionDTO'
         '404':
           $ref: '#/components/responses/NotFound'
     post:
@@ -758,6 +812,7 @@ paths:
               properties:
                 id_orden:
                   type: integer
+                  example: 105
       responses:
         '200':
           $ref: '#/components/responses/SuccessMessage'
@@ -781,6 +836,7 @@ paths:
               properties:
                 id_detalle_serv:
                   type: integer
+                  example: 42
       responses:
         '200':
           $ref: '#/components/responses/SuccessMessage'
@@ -871,7 +927,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReporteOcupacionDTO'
 
   /api/reportes/recaudacion:
     get:
@@ -901,7 +962,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReporteRecaudacionDTO'
 
   /api/reportes/cancelaciones:
     get:
@@ -931,7 +997,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/ReporteCancelacionesDTO'
 
   # ==========================================================================
   # MÓDULO 11: CANDY BAR INDEPENDIENTE
@@ -945,14 +1016,21 @@ paths:
         - name: sucursal
           in: query
           required: true
-          schema: { type: integer }
+          schema: { type: integer, example: 1 }
       responses:
         '200':
           description: Productos activos con disponibilidad en la sucursal
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CandyProductoSucursalDTO'
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -979,7 +1057,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CandyPedidosPaginadosDTO'
     post:
       tags: [11. Candy Bar Independiente]
       summary: Crear pedido independiente de Candy Bar (PENDIENTE_PAGO)
@@ -998,7 +1081,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CandyPedidoDetalleDTO'
         '409':
           $ref: '#/components/responses/Conflict'
 
@@ -1124,7 +1212,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SuccessEnvelope'
+                allOf:
+                  - $ref: '#/components/schemas/SuccessEnvelope'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CandyPedidosPaginadosDTO'
 
   /api/candybar/pedidos/{id}/resolver-inventario:
     post:
@@ -1202,7 +1295,16 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/SuccessEnvelope'
+            allOf:
+              - $ref: '#/components/schemas/SuccessEnvelope'
+              - type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      mensaje:
+                        type: string
+                        example: "Operación procesada correctamente."
     BadRequest:
       description: Datos de entrada inválidos o violación de formato (HTTP 400)
       content:
@@ -1335,6 +1437,7 @@ components:
           example: "Gladiator II"
         sinopsis:
           type: string
+          example: "Años después de presenciar la muerte del héroe Máximo, Lucio debe entrar al Coliseo."
         duracion_minutos:
           type: integer
           example: 148
@@ -1351,22 +1454,56 @@ components:
           type: boolean
           example: true
 
+    PeliculaExternaDTO:
+      type: object
+      properties:
+        id_externo:
+          type: string
+          example: "tt9218128"
+        titulo:
+          type: string
+          example: "Gladiator II"
+        anio:
+          type: integer
+          example: 2024
+        sinopsis:
+          type: string
+          example: "Años después de presenciar la muerte del héroe Máximo, Lucio debe entrar al Coliseo."
+        duracion_min:
+          type: integer
+          example: 148
+        genero:
+          type: string
+          example: "Acción"
+        clasificacion:
+          type: string
+          example: "+16"
+        poster_url:
+          type: string
+          example: "https://image.tmdb.org/t/p/w500/gladiator2.jpg"
+
     PeliculaCreateRequest:
       type: object
       required: [titulo, genero, duracion_min, clasificacion]
       properties:
         titulo:
           type: string
+          example: "Gladiator II"
         sinopsis:
           type: string
+          example: "Años después de presenciar la muerte del héroe Máximo, Lucio debe entrar al Coliseo."
         poster_url:
           type: string
+          example: "https://image.tmdb.org/t/p/w500/gladiator2.jpg"
         genero:
           type: string
+          example: "Acción"
         duracion_min:
           type: integer
+          example: 148
         clasificacion:
           type: string
+          example: "+16"
 
     SucursalDTO:
       type: object
@@ -1383,6 +1520,26 @@ components:
         ciudad:
           type: string
           example: "CABA"
+
+    SalaDTO:
+      type: object
+      properties:
+        id_sala:
+          type: integer
+          example: 1
+        id_sucursal:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: "Sala 1 - Victorian IMAX"
+        capacidad:
+          type: integer
+          example: 32
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO, MANTENIMIENTO]
+          example: "ACTIVO"
 
     FuncionCreateRequest:
       type: object
@@ -1408,23 +1565,45 @@ components:
       properties:
         id_funcion:
           type: integer
+          example: 1
+        id_pelicula:
+          type: integer
+          example: 1
         pelicula:
           type: string
+          example: "Gladiator II"
+        id_sucursal:
+          type: integer
+          example: 1
         sucursal:
           type: string
+          example: "Cine Paradiso Central"
+        id_sala:
+          type: integer
+          example: 1
         sala:
           type: string
+          example: "Sala 1 - Victorian IMAX"
         fecha_hora:
           type: string
           format: date-time
+          example: "2026-10-26T20:00:00-03:00"
         capacidad:
           type: integer
+          example: 32
         butacas_disponibles:
           type: integer
+          example: 28
         precio_base:
           type: number
+          example: 4500.00
+        estado:
+          type: string
+          enum: [PROGRAMADA, EN_CURSO, FINALIZADA, CANCELADA]
+          example: "PROGRAMADA"
         permite_compra:
           type: boolean
+          example: true
 
     AsientoFuncionDTO:
       type: object
@@ -1441,6 +1620,7 @@ components:
         tipo:
           type: string
           enum: [NORMAL, VIP, DISCAPACITADO]
+          example: "VIP"
         estado_visual:
           type: string
           enum: [INHABILITADO, OCUPADO, BLOQUEADO, DISPONIBLE]
@@ -1471,16 +1651,65 @@ components:
             type: object
             required: [id_producto, cantidad]
             properties:
-              id_producto: { type: integer }
-              cantidad: { type: integer, minimum: 1 }
+              id_producto: { type: integer, example: 1 }
+              cantidad: { type: integer, minimum: 1, example: 2 }
         servicios:
           type: array
           items:
             type: object
             required: [id_servicio, cantidad]
             properties:
-              id_servicio: { type: integer }
-              cantidad: { type: integer, minimum: 1 }
+              id_servicio: { type: integer, example: 1 }
+              cantidad: { type: integer, minimum: 1, example: 1 }
+
+    ItemProductoOrdenDTO:
+      type: object
+      properties:
+        id_producto:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: "Combo Victoriano Popcorn"
+        cantidad:
+          type: integer
+          example: 1
+        precio_unitario:
+          type: number
+          example: 3500.00
+        subtotal:
+          type: number
+          example: 3500.00
+        estado:
+          type: string
+          enum: [PENDIENTE, ENTREGADO, CANCELADO, NO_RETIRADO]
+          example: "PENDIENTE"
+
+    ItemServicioOrdenDTO:
+      type: object
+      properties:
+        id_detalle_serv:
+          type: integer
+          example: 10
+        id_servicio:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: "Estacionamiento Reservado"
+        cantidad:
+          type: integer
+          example: 1
+        precio_unitario:
+          type: number
+          example: 2000.00
+        subtotal:
+          type: number
+          example: 2000.00
+        estado:
+          type: string
+          enum: [PENDIENTE, UTILIZADO, CANCELADO]
+          example: "PENDIENTE"
 
     CompraDetalleDTO:
       type: object
@@ -1490,97 +1719,161 @@ components:
           example: 105
         id_funcion:
           type: integer
+          example: 1
         estado:
           type: string
           enum: [PENDIENTE, CONFIRMADA, CANCELADA, EXPIRADA]
+          example: "PENDIENTE"
         vencimiento_bloqueo:
           type: string
           format: date-time
+          example: "2026-10-26T19:35:00-03:00"
         total:
           type: number
-          example: 12500.00
+          example: 14500.00
         asientos:
           type: array
           items:
             type: integer
+          example: [19, 20]
         productos:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/ItemProductoOrdenDTO'
         servicios:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/ItemServicioOrdenDTO'
 
     ProductoPublicoDTO:
       type: object
       properties:
         id_producto:
           type: integer
+          example: 1
         nombre:
           type: string
+          example: "Combo Victoriano Popcorn"
         descripcion:
           type: string
+          example: "Pochoclos balde mediano + 1 Gaseosa 500ml"
         tipo:
           type: string
           enum: [COMIDA, BEBIDA, COMBO, MERCHANDISING]
+          example: "COMBO"
         precio_base:
           type: number
+          example: 3500.00
         agotado:
           type: boolean
+          example: false
 
     ProductoCreateRequest:
       type: object
       required: [nombre, tipo, precio_base]
       properties:
-        nombre: { type: string }
-        descripcion: { type: string }
-        tipo: { type: string, enum: [COMIDA, BEBIDA, COMBO, MERCHANDISING] }
-        precio_base: { type: number }
+        nombre: { type: string, example: "Combo Imperial Real" }
+        descripcion: { type: string, example: "Pochoclos balde grande + 2 Gaseosas grandes + Bombones" }
+        tipo: { type: string, enum: [COMIDA, BEBIDA, COMBO, MERCHANDISING], example: "COMBO" }
+        precio_base: { type: number, example: 6200.00 }
         estado: { type: string, enum: [ACTIVO, INACTIVO], default: ACTIVO }
 
     InventarioSucursalDTO:
       type: object
       properties:
-        id_producto: { type: integer }
-        nombre: { type: string }
-        stock_actual: { type: integer }
-        stock_minimo: { type: integer }
+        id_producto: { type: integer, example: 1 }
+        nombre: { type: string, example: "Combo Victoriano Popcorn" }
+        stock_actual: { type: integer, example: 50 }
+        stock_minimo: { type: integer, example: 10 }
 
     AjusteInventarioRequest:
       type: object
       required: [id_sucursal, id_producto, cantidad_ajuste, motivo]
       properties:
-        id_sucursal: { type: integer }
-        id_producto: { type: integer }
+        id_sucursal: { type: integer, example: 1 }
+        id_producto: { type: integer, example: 1 }
         cantidad_ajuste:
           type: integer
           description: Valor positivo (ingreso) o negativo (merma/egreso)
-        motivo: { type: string }
+          example: 25
+        motivo: { type: string, example: "Reposición de lote semanal en depósito" }
+
+    ServicioPublicoDTO:
+      type: object
+      properties:
+        id_servicio:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: "Estacionamiento Reservado"
+        descripcion:
+          type: string
+          example: "Cochera fija techada dentro del predio del cine"
+        tipo:
+          type: string
+          enum: [ESTACIONAMIENTO, ACCESO_VIP, LENTES_3D, OTRO]
+          example: "ESTACIONAMIENTO"
+        precio_base:
+          type: number
+          example: 2000.00
+        requiere_cupo:
+          type: boolean
+          example: true
+        estado:
+          type: string
+          enum: [ACTIVO, INACTIVO]
+          example: "ACTIVO"
 
     ServicioCreateRequest:
       type: object
       required: [nombre, tipo, precio_base, requiere_cupo]
       properties:
-        nombre: { type: string }
-        descripcion: { type: string }
-        tipo: { type: string, enum: [ESTACIONAMIENTO, ACCESO_VIP, LENTES_3D, OTRO] }
-        precio_base: { type: number }
+        nombre: { type: string, example: "Acceso VIP Lounge" }
+        descripcion: { type: string, example: "Ingreso exclusivo a sala victoriana pre-función" }
+        tipo: { type: string, enum: [ESTACIONAMIENTO, ACCESO_VIP, LENTES_3D, OTRO], example: "ACCESO_VIP" }
+        precio_base: { type: number, example: 1500.00 }
         requiere_cupo: { type: boolean, default: true }
 
     ServicioUpdateRequest:
       type: object
       properties:
-        precio_base: { type: number }
-        estado: { type: string, enum: [ACTIVO, INACTIVO] }
-        requiere_cupo: { type: boolean }
+        precio_base: { type: number, example: 2200.00 }
+        estado: { type: string, enum: [ACTIVO, INACTIVO], example: "ACTIVO" }
+        requiere_cupo: { type: boolean, example: true }
+
+    CupoServicioFuncionDTO:
+      type: object
+      properties:
+        id_cupo:
+          type: integer
+          example: 1
+        id_funcion:
+          type: integer
+          example: 1
+        id_servicio:
+          type: integer
+          example: 1
+        nombre_servicio:
+          type: string
+          example: "Estacionamiento Reservado"
+        cupo_total:
+          type: integer
+          example: 20
+        cupo_disponible:
+          type: integer
+          example: 14
+        estado:
+          type: string
+          enum: [DISPONIBLE, AGOTADO]
+          example: "DISPONIBLE"
 
     CupoServicioConfigRequest:
       type: object
       required: [id_servicio, cupo_total]
       properties:
-        id_servicio: { type: integer }
-        cupo_total: { type: integer, minimum: 0 }
+        id_servicio: { type: integer, example: 1 }
+        cupo_total: { type: integer, minimum: 0, example: 20 }
 
     ConfirmarPagoRequest:
       type: object
@@ -1600,10 +1893,10 @@ components:
     OrdenConfirmadaDTO:
       type: object
       properties:
-        id_orden: { type: integer }
+        id_orden: { type: integer, example: 105 }
         estado: { type: string, example: "CONFIRMADA" }
-        total: { type: number }
-        referencia_pago: { type: string }
+        total: { type: number, example: 14500.00 }
+        referencia_pago: { type: string, example: "SIM-PAY-20261026-00105" }
         codigo_qr:
           type: string
           description: Código QR único asociado a la orden (según tabla codigos_qr en schema.sql)
@@ -1613,11 +1906,21 @@ components:
           items:
             type: object
             properties:
-              id_entrada: { type: integer }
-              id_asiento: { type: integer }
-              precio_unitario: { type: number }
+              id_entrada: { type: integer, example: 210 }
+              id_asiento: { type: integer, example: 19 }
+              fila: { type: string, example: "C" }
+              numero: { type: string, example: "3" }
+              precio_unitario: { type: number, example: 4500.00 }
               # Si el grupo decide pasar a 1 QR por entrada, descomentar la línea de abajo:
               # codigo_qr: { type: string }
+        productos:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemProductoOrdenDTO'
+        servicios:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemServicioOrdenDTO'
 
     CodigoQrRequest:
       type: object
@@ -1631,9 +1934,134 @@ components:
       type: object
       required: [id_entrada, id_asiento_nuevo, motivo]
       properties:
-        id_entrada: { type: integer }
-        id_asiento_nuevo: { type: integer }
+        id_entrada: { type: integer, example: 210 }
+        id_asiento_nuevo: { type: integer, example: 21 }
         motivo: { type: string, example: "Butaca B4 con desperfecto físico" }
+
+    ReporteOcupacionDTO:
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date
+          example: "2026-10-01"
+        hasta:
+          type: string
+          format: date
+          example: "2026-10-31"
+        butacas_habilitadas_totales:
+          type: integer
+          example: 320
+        entradas_vigentes_vendidas:
+          type: integer
+          example: 240
+        ocupacion_comercial_porcentaje:
+          type: number
+          format: double
+          example: 75.0
+        asistencia_real_qr_usados:
+          type: integer
+          nullable: true
+          example: 218
+        desglose:
+          type: array
+          items:
+            type: object
+            properties:
+              referencia: { type: string, example: "Sala 1 - Victorian IMAX" }
+              butacas_habilitadas: { type: integer, example: 32 }
+              entradas_vendidas: { type: integer, example: 24 }
+              porcentaje_ocupacion: { type: number, example: 75.0 }
+
+    ReporteRecaudacionDTO:
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date
+          example: "2026-10-01"
+        hasta:
+          type: string
+          format: date
+          example: "2026-10-31"
+        ventas_brutas:
+          type: number
+          example: 1850000.00
+        reintegros_totales:
+          type: number
+          example: 95000.00
+        recaudacion_neta:
+          type: number
+          example: 1755000.00
+        desglose_por_rubro:
+          type: object
+          properties:
+            entradas_cine: { type: number, example: 1100000.00 }
+            productos_cine: { type: number, example: 350000.00 }
+            servicios_adicionales: { type: number, example: 125000.00 }
+            candybar_independiente: { type: number, example: 180000.00 }
+
+    ReporteCancelacionesDTO:
+      type: object
+      properties:
+        desde:
+          type: string
+          format: date
+          example: "2026-10-01"
+        hasta:
+          type: string
+          format: date
+          example: "2026-10-31"
+        cantidad_ordenes_canceladas:
+          type: integer
+          example: 8
+        importe_total_reintegrado:
+          type: number
+          example: 95000.00
+        motivos:
+          type: array
+          items:
+            type: object
+            properties:
+              tipo:
+                type: string
+                enum: [CLIENTE_AUTOGESTION, ADMIN_EXCEPCION, FUERZA_MAYOR]
+                example: "CLIENTE_AUTOGESTION"
+              motivo:
+                type: string
+                example: "Imprevisto personal"
+              cantidad:
+                type: integer
+                example: 6
+              importe_reintegrado:
+                type: number
+                example: 72000.00
+
+    CandyProductoSucursalDTO:
+      type: object
+      properties:
+        id_producto:
+          type: integer
+          example: 1
+        nombre:
+          type: string
+          example: "Combo Victoriano Popcorn"
+        descripcion:
+          type: string
+          example: "Pochoclos balde mediano + 1 Gaseosa 500ml"
+        tipo:
+          type: string
+          enum: [COMIDA, BEBIDA, COMBO, MERCHANDISING]
+          example: "COMBO"
+        precio_base:
+          type: number
+          example: 3500.00
+        stock_disponible:
+          type: integer
+          example: 50
+        maximo_por_pedido:
+          type: integer
+          example: 12
 
     CandyPedidoCreateRequest:
       type: object
@@ -1652,23 +2080,74 @@ components:
               id_producto: { type: integer, example: 1 }
               cantidad: { type: integer, minimum: 1, maximum: 12, example: 2 }
 
-    CandyPedidoDetalleDTO:
+    CandyPedidoResumenDTO:
       type: object
       properties:
-        id_orden: { type: integer }
-        id_sucursal_retiro: { type: integer }
+        id_orden:
+          type: integer
+          example: 204
+        id_sucursal_retiro:
+          type: integer
+          example: 1
+        sucursal_nombre:
+          type: string
+          example: "Cine Paradiso Central"
+        fecha_creacion:
+          type: string
+          format: date-time
+          example: "2026-10-26T21:15:00-03:00"
         estado_efectivo:
           type: string
           enum: [PENDIENTE_PAGO, PENDIENTE_RETIRO, ENTREGADO, CANCELADA, EXPIRADA, NO_RETIRADO]
-        total: { type: number }
+          example: "PENDIENTE_RETIRO"
+        total:
+          type: number
+          example: 7000.00
+
+    CandyPedidosPaginadosDTO:
+      type: object
+      properties:
+        pagina:
+          type: integer
+          example: 1
+        limite:
+          type: integer
+          example: 10
+        total_registros:
+          type: integer
+          example: 1
+        pedidos:
+          type: array
+          items:
+            $ref: '#/components/schemas/CandyPedidoResumenDTO'
+
+    CandyPedidoDetalleDTO:
+      type: object
+      properties:
+        id_orden: { type: integer, example: 204 }
+        id_sucursal_retiro: { type: integer, example: 1 }
+        fecha_creacion:
+          type: string
+          format: date-time
+          example: "2026-10-26T21:15:00-03:00"
+        vencimiento_bloqueo:
+          type: string
+          format: date-time
+          example: "2026-10-26T21:20:00-03:00"
+        estado_efectivo:
+          type: string
+          enum: [PENDIENTE_PAGO, PENDIENTE_RETIRO, ENTREGADO, CANCELADA, EXPIRADA, NO_RETIRADO]
+          example: "PENDIENTE_RETIRO"
+        total: { type: number, example: 7000.00 }
         qr_imagen:
           type: string
           nullable: true
           description: Imagen QR en Base64 (solo visible para CLIENTE titular en estado PENDIENTE_RETIRO, nunca para ADMIN)
+          example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
         productos:
           type: array
           items:
-            type: object
+            $ref: '#/components/schemas/ItemProductoOrdenDTO'
 
     ResolverInventarioRequest:
       type: object
@@ -1684,6 +2163,6 @@ components:
             type: object
             required: [id_producto, cantidad_reingresada, cantidad_descartada]
             properties:
-              id_producto: { type: integer }
-              cantidad_reingresada: { type: integer, minimum: 0 }
-              cantidad_descartada: { type: integer, minimum: 0 }
+              id_producto: { type: integer, example: 1 }
+              cantidad_reingresada: { type: integer, minimum: 0, example: 1 }
+              cantidad_descartada: { type: integer, minimum: 0, example: 1 }
