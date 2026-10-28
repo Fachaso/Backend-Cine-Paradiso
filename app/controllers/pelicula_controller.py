@@ -1,5 +1,5 @@
 from flask import jsonify, request
-from db.connection import execute_query
+from app.repositories.db_connection import execute_query
 
 def listar_peliculas():
     """

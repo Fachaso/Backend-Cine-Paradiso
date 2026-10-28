@@ -14,7 +14,7 @@ def create_app():
     CORS(app)
 
     # Registros de Blueprints (Rutas)
-    from routes.pelicula_routes import pelicula_bp
+    from app.routes.peliculas_routes import pelicula_bp
     app.register_blueprint(pelicula_bp)
 
     # Route de chequeo de salud
