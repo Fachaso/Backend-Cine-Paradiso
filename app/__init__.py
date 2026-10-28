@@ -10,10 +10,12 @@ def create_app(config_class=Config):
     from app.routes.peliculas_routes import peliculas_bp
     from app.routes.compras_routes import compras_bp
     from app.routes.candybar_routes import candybar_bp
+    from app.routes.sucursales_routes import sucursales_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/auth")
     app.register_blueprint(peliculas_bp, url_prefix="/api/peliculas")
     app.register_blueprint(compras_bp, url_prefix="/api")
     app.register_blueprint(candybar_bp, url_prefix="/api/candybar")
+    app.register_blueprint(sucursales_bp)
 
     return app
