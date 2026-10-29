@@ -1,5 +1,5 @@
-from datetime import datetime, timedelta
-from decimal import Decimal, InvalidOperation
+from datetime import datetime, timedelta, time
+from decimal import Decimal
 
 from app.repositories.db_connection import execute_query
 from app.repositories.producto_repository import (
@@ -63,8 +63,8 @@ def crear_pedido_candybar(datos):
     hora_actual = ahora.time()
 
     horario_permitido = (
-        hora_actual >= datetime.strptime("12:00", "%H:%M").time()
-        or hora_actual < datetime.strptime("02:00", "%H:%M").time()
+        hora_actual >= time(12, 0)
+        or hora_actual < time(2, 0)
     )
 
     if not horario_permitido:
