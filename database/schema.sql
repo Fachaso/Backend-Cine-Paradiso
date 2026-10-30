@@ -522,3 +522,5 @@ INSERT INTO servicios (id_servicio, nombre, descripcion, tipo, precio_base, requ
 INSERT INTO cupos_servicios_funcion (id_funcion, id_servicio, cupo_total, cupo_disponible, estado) VALUES
 (1, 1, 20, 20, 'DISPONIBLE'),
 (1, 2, 15, 15, 'DISPONIBLE');
+
+select id_pelicula, titulo, genero FROM peliculas
