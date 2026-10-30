@@ -21,7 +21,7 @@ Este sistema de venta de entradas está compuesto por dos repositorios complemen
 * Jorge Félix García Sánchez - 116133 - jfgarcias@fi.uba.ar
 * Diego Oliver Yujra Cossio - 116532 - dyujra@fi.uba.ar
 * Maximiliano Alexis Silva - 115666 - masilva@fi.uba.ar
-*
+* Lucio Valentín Villagra - 116288 - lvillagra@fi.uba.ar
 ---
 
 ## Versiones utilizadas 
