@@ -13,9 +13,14 @@ def create_app():
     # Habilitar CORS para permitir solicitudes del Frontend
     CORS(app)
 
-    # Registros de Blueprints (Rutas)
+    # Registros de Blueprints (Rutas implementadas)
     from app.routes.peliculas_routes import pelicula_bp
+    from app.routes.candybar_routes import candybar_bp
+    from app.routes.sucursales_routes import sucursales_bp
+
     app.register_blueprint(pelicula_bp)
+    app.register_blueprint(candybar_bp)
+    app.register_blueprint(sucursales_bp)
 
     # Route de chequeo de salud
     @app.route("/api/health", methods=["GET"])
