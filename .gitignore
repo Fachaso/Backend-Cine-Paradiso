@@ -10,3 +10,8 @@ __pycache__/
 *.log
 instance/
 .DS_Store
+
+.idea/
+*.iml
+.vscode/
+.junie/
