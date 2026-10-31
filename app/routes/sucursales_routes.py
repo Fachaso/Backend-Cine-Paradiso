@@ -7,4 +7,4 @@ sucursales_bp = Blueprint("sucursales", __name__, url_prefix="/api")
 
 sucursales_bp.route("/sucursales", methods=["GET"])(listar_sucursales)
 sucursales_bp.route("/sucursales/<int:id_sucursal>/salas", methods=["GET"])(listar_salas)
-sucursales_bp.route("/salas", methods=["POST"])(crear_sala)
+sucursales_bp.route("/sucursales/<int:id_sucursal>/salas", methods=["POST"])(crear_sala)
