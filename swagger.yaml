@@ -1,2168 +1,1733 @@
-openapi: 3.0.4
+openapi: 3.0.3
 info:
-  title: API REST - Cine Paradiso
-  version: 1.0.0
+  title: Cine Paradiso - API REST
+  version: 2.1.0
   description: >
-    Especificación completa de contratos funcionales para el Hito 1 (11 módulos, 49 endpoints).
-    Arquitectura: Frontend Flask -> Python requests -> Backend REST Flask -> MySQL 8 (InnoDB, SQL parametrizado sin ORM).
+    Contrato REST basado en el enunciado del Proyecto Integrador IDS 2026.<br>
+    Arquitectura: Frontend Flask -> Python requests -> Backend REST Flask -> MySQL 8.<br>
     Autenticación gestionada mediante sesión de Flask (FlaskSessionCookie).
 servers:
   - url: http://localhost:5000
-    description: Servidor Local de Desarrollo (Backend Flask)
-
+    description: Servidor Local Backend Flask
 tags:
-  - name: 1. Autenticación y Usuarios
-  - name: 2. Películas y Cartelera
-  - name: 3. Sucursales, Salas y Funciones
-  - name: 4. Butacas y Bloqueos
-  - name: 5. Productos e Inventario
-  - name: 6. Servicios Adicionales
-  - name: 7. Órdenes, Checkout y Notificación
-  - name: 8. Control de Acceso y Consumos
-  - name: 9. Cancelaciones e Incidencias
-  - name: 10. Reportes y Métricas
-  - name: 11. Candy Bar Independiente
+  - name: Autenticación
+  - name: Usuarios
+  - name: Películas
+  - name: Sucursales y salas
+  - name: Funciones
+  - name: Servicios
+  - name: Compras
+  - name: Acceso
+  - name: Estadísticas
+  - name: Reseñas opcionales
+security:
+  - sessionAuth: []
 
 paths:
-  # ==========================================================================
-  # MÓDULO 1: AUTENTICACIÓN Y USUARIOS
-  # ==========================================================================
-  /api/auth/registro:
+  /api/usuarios:
     post:
-      tags: [1. Autenticación y Usuarios]
-      summary: Registro público de cliente
-      description: Acceso PUBLICO. Crea exclusivamente cuentas con rol CLIENTE.
+      tags:
+        - Usuarios
+      summary: Registrar nuevo cliente
+      description: Acceso público. Crea un usuario con rol CLIENTE.
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegistroRequest'
+              $ref: '#/components/schemas/UsuarioRegistro'
       responses:
         '201':
           description: Cliente registrado exitosamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Usuario'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/Http400'
+        '409':
+          $ref: '#/components/responses/Http409'
 
-  /api/auth/login:
+  /api/sesiones:
     post:
-      tags: [1. Autenticación y Usuarios]
-      summary: Iniciar sesión
-      description: Acceso PUBLICO. Valida credenciales e inicia sesión Flask devolviendo identidad y rol.
+      tags:
+        - Autenticación
+      summary: Iniciar sesión de usuario
+      description: >
+        Valida las credenciales contra la base de datos, inicia la sesión en el backend
+        y devuelve los datos básicos del usuario (incluyendo su rol CLIENTE o ADMIN)
+        para que el Frontend Flask gestione las vistas y permisos.
+      security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LoginRequest'
+              $ref: '#/components/schemas/Credenciales'
       responses:
         '200':
-          description: Autenticación exitosa (establece cookie de sesión Flask)
+          description: Sesión iniciada correctamente
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Usuario'
+        '400':
+          $ref: '#/components/responses/Http400'
         '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  /api/auth/logout:
-    post:
-      tags: [1. Autenticación y Usuarios]
-      summary: Cerrar sesión activa
-      description: Acceso AUTENTICADO (CLIENTE, EMPLEADO, ADMIN).
-      security:
-        - FlaskSessionCookie: []
+          $ref: '#/components/responses/Http401'
+    delete:
+      tags:
+        - Autenticación
+      summary: Cerrar sesión actual
       responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
+        '204':
+          description: Sesión cerrada (sin contenido)
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          $ref: '#/components/responses/Http401'
 
-  /api/auth/me:
+  /api/perfil:
     get:
-      tags: [1. Autenticación y Usuarios]
-      summary: Obtener identidad y rol de la sesión actual
-      description: Acceso AUTENTICADO. Devuelve perfil, rol e id_sucursal si aplica. Nunca expone password_hash.
-      security:
-        - FlaskSessionCookie: []
+      tags:
+        - Usuarios
+      summary: Consultar perfil e historial de compras y películas vistas
       responses:
         '200':
-          description: Datos del usuario autenticado
+          description: Perfil del usuario autenticado con su historial
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthResponse'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Perfil'
         '401':
-          $ref: '#/components/responses/Unauthorized'
+          $ref: '#/components/responses/Http401'
 
-  # ==========================================================================
-  # MÓDULO 2: PELÍCULAS Y CARTELERA
-  # ==========================================================================
   /api/peliculas:
     get:
-      tags: [2. Películas y Cartelera]
-      summary: Catálogo público de películas activas
-      description: Acceso PUBLICO. Lista películas activas (incluso sin funciones futuras) con indicador tiene_funciones_disponibles.
+      tags:
+        - Películas
+      summary: Listar películas del catálogo local
+      security: []
       parameters:
-        - name: buscar
-          in: query
-          schema: { type: string }
         - name: genero
           in: query
-          schema: { type: string }
-        - name: clasificacion
+          required: false
+          schema:
+            type: string
+          description: Filtrar por género
+        - name: titulo
           in: query
-          schema: { type: string }
-        - $ref: '#/components/parameters/PaginaParam'
-        - $ref: '#/components/parameters/LimiteParam'
+          required: false
+          schema:
+            type: string
+          description: Buscar por coincidencia en el título
       responses:
         '200':
-          description: Lista paginada de películas
+          description: Listado de películas cargadas en la base de datos local
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/PeliculaDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Pelicula'
     post:
-      tags: [2. Películas y Cartelera]
-      summary: Alta o importación de película al catálogo local
-      description: Acceso ADMIN. Persiste una película en la base de datos local.
-      security:
-        - FlaskSessionCookie: []
+      tags:
+        - Películas
+      summary: Importar película desde la API externa al catálogo local
+      description: >
+        Solo ADMIN. Persiste en la tabla 'peliculas' una película previamente
+        consultada en /api/peliculas-externas.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PeliculaCreateRequest'
+              $ref: '#/components/schemas/PeliculaCrear'
       responses:
         '201':
-          description: Película creada
+          description: Película guardada en la base de datos local
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PeliculaDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Pelicula'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
         '409':
-          $ref: '#/components/responses/Conflict'
+          $ref: '#/components/responses/Http409'
 
-  /api/peliculas/{id}:
+  /api/peliculas/{id_pelicula}:
     get:
-      tags: [2. Películas y Cartelera]
-      summary: Detalle de ficha de película
-      description: Acceso PUBLICO.
+      tags:
+        - Películas
+      summary: Consultar detalle de una película
+      security: []
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/IdPelicula'
       responses:
         '200':
-          description: Detalle de la película
+          description: Película encontrada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/PeliculaDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Pelicula'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/Http404'
 
-  /api/peliculas/{id}/funciones:
+  /api/peliculas-externas:
     get:
-      tags: [2. Películas y Cartelera]
-      summary: Funciones futuras reservables de una película
-      description: Acceso PUBLICO. Los filtros fecha y desde son mutuamente excluyentes.
+      tags:
+        - Películas
+      summary: Buscar películas en proveedor externo (OMDb / TMDb)
+      description: >
+        Solo ADMIN. El backend consulta la API externa y devuelve candidatos.
+        La película no se guarda en la BDD hasta hacer POST en /api/peliculas.
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-        - name: sucursal
-          in: query
-          schema: { type: integer }
-        - name: fecha
-          in: query
-          description: Fecha exacta YYYY-MM-DD (excluyente con 'desde')
-          schema: { type: string, format: date }
-        - name: desde
-          in: query
-          description: Fecha/hora inicial (excluyente con 'fecha')
-          schema: { type: string, format: date-time }
-      responses:
-        '200':
-          description: Funciones disponibles para la película
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/FuncionDetalleDTO'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/peliculas/buscar-externa:
-    get:
-      tags: [2. Películas y Cartelera]
-      summary: Buscar películas en API externa (TMDb / OMDb)
-      description: Acceso ADMIN. Facilita la carga administrativa sin sustituir la persistencia local.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - name: query
+        - name: q
           in: query
           required: true
-          description: Título o palabra clave de la película a buscar en TMDb / OMDb
           schema:
             type: string
-            example: "Gladiator"
+            example: Gladiator
+          description: Título o palabra clave a buscar en la API externa
       responses:
         '200':
-          description: Resultados provenientes del proveedor externo
+          description: Coincidencias obtenidas de OMDb / TMDb
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/PeliculaExternaDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PeliculaExterna'
+        '400':
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '500':
+          $ref: '#/components/responses/Http500'
 
-  # ==========================================================================
-  # MÓDULO 3: SUCURSALES, SALAS Y FUNCIONES
-  # ==========================================================================
   /api/sucursales:
     get:
-      tags: ["3. Sucursales, Salas y Funciones"]
-      summary: Listar sucursales activas
-      description: Acceso PUBLICO. Ordenadas alfabéticamente.
+      tags:
+        - Sucursales y salas
+      summary: Listar sucursales
+      security: []
       responses:
         '200':
-          description: Lista de sucursales activas
+          description: Sucursales disponibles
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/SucursalDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sucursal'
 
-  /api/sucursales/{id}/salas:
+  /api/sucursales/{id_sucursal}/salas:
     get:
-      tags: ["3. Sucursales, Salas y Funciones"]
+      tags:
+        - Sucursales y salas
       summary: Listar salas de una sucursal
-      description: Acceso ADMIN. Devuelve capacidad y estado operativo de cada sala.
-      security:
-        - FlaskSessionCookie: []
+      security: []
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/IdSucursal'
       responses:
         '200':
           description: Salas de la sucursal
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/SalaDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Sala'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/Http404'
+    post:
+      tags:
+        - Sucursales y salas
+      summary: Crear sala en una sucursal y generar sus asientos
+      description: >
+        Solo ADMIN. Crea la sala asociada a 'id_sucursal' y genera automáticamente
+        sus registros en la tabla 'asientos' según la capacidad indicada.
+      parameters:
+        - $ref: '#/components/parameters/IdSucursal'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalaCrear'
+      responses:
+        '201':
+          description: Sala y asientos creados
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Sala'
+        '400':
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
 
   /api/funciones:
     get:
-      tags: ["3. Sucursales, Salas y Funciones"]
-      summary: Consultar cartelera de funciones
-      description: Acceso PUBLICO.
+      tags:
+        - Funciones
+      summary: Listar funciones y filtrar cartelera
+      security: []
       parameters:
-        - name: id_sucursal
-          in: query
-          schema: { type: integer }
-        - name: fecha
-          in: query
-          schema: { type: string, format: date }
         - name: id_pelicula
           in: query
-          schema: { type: integer }
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: id_sucursal
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: fecha
+          in: query
+          required: false
+          schema:
+            type: string
+            format: date
       responses:
         '200':
-          description: Lista de funciones
+          description: Funciones disponibles con datos de película, sala y sucursal
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/FuncionDetalleDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Funcion'
+        '400':
+          $ref: '#/components/responses/Http400'
     post:
-      tags: ["3. Sucursales, Salas y Funciones"]
-      summary: Programar nueva función
-      description: Acceso ADMIN. Impide el solapamiento en la misma sala contemplando duración + intervalo de limpieza.
-      security:
-        - FlaskSessionCookie: []
+      tags:
+        - Funciones
+      summary: Programar una nueva función
+      description: >
+        Solo ADMIN. Recibe id_pelicula, id_sala, fecha_hora y precio_entrada
+        (la sucursal se deduce automáticamente de id_sala). Valida que no exista
+        solapamiento horario en esa misma sala.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/FuncionCreateRequest'
+              $ref: '#/components/schemas/FuncionCrear'
       responses:
         '201':
-          description: Función creada
+          description: Función creada exitosamente
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FuncionDetalleDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Funcion'
         '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/funciones/{id}:
-    get:
-      tags: ["3. Sucursales, Salas y Funciones"]
-      summary: Detalle de una función (admite histórico)
-      description: Acceso PUBLICO. Incluye indicador permite_compra (hasta 15 min después del inicio).
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Datos de la función
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/FuncionDetalleDTO'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  # ==========================================================================
-  # MÓDULO 4: BUTACAS Y BLOQUEOS
-  # ==========================================================================
-  /api/funciones/{id}/asientos:
-    get:
-      tags: [4. Butacas y Bloqueos]
-      summary: Mapa de disponibilidad de asientos de la función
-      description: Acceso PUBLICO. Devuelve estados INHABILITADO, OCUPADO, BLOQUEADO o DISPONIBLE sin exponer datos de compradores.
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Grilla de asientos de la función
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/AsientoFuncionDTO'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/compras/iniciar:
-    post:
-      tags: [4. Butacas y Bloqueos]
-      summary: Iniciar compra y bloquear asientos por 5 minutos
-      description: Acceso CLIENTE. Admite de 1 a 6 asientos distintos. Falla con 409 si el cliente ya tiene otra compra pendiente o las butacas no están disponibles.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CompraIniciarRequest'
-      responses:
-        '201':
-          description: Bloqueo temporal de 5 minutos y orden PENDIENTE creados
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CompraDetalleDTO'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/compras/{id}:
-    get:
-      tags: [4. Butacas y Bloqueos]
-      summary: Consultar estado y detalle de compra en curso
-      description: Acceso CLIENTE titular / ADMIN.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Detalle del carrito/compra
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CompraDetalleDTO'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    patch:
-      tags: [4. Butacas y Bloqueos]
-      summary: Actualizar productos y servicios del carrito pendiente
-      description: Acceso CLIENTE titular. Congela precios en cotizacion_productos sin alterar función/asientos ni reiniciar el reloj de 5 minutos. Máximo 6 bebidas por orden y 1 unidad de cada servicio por entrada.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CompraActualizarRequest'
-      responses:
-        '200':
-          description: Carrito actualizado
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CompraDetalleDTO'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
-    delete:
-      tags: [4. Butacas y Bloqueos]
-      summary: Abandonar compra pendiente y liberar bloqueos
-      description: Acceso CLIENTE titular.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  # ==========================================================================
-  # MÓDULO 5: PRODUCTOS E INVENTARIO
-  # ==========================================================================
-  /api/productos:
-    get:
-      tags: [5. Productos e Inventario]
-      summary: Catálogo público de productos activos
-      description: Acceso PUBLICO. Muestra productos activos (incluso agotados); oculta inactivos y stock exacto.
-      responses:
-        '200':
-          description: Lista de productos
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/ProductoPublicoDTO'
-    post:
-      tags: [5. Productos e Inventario]
-      summary: Crear producto en el catálogo
-      description: Acceso ADMIN.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProductoCreateRequest'
-      responses:
-        '201':
-          $ref: '#/components/responses/SuccessMessage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /api/sucursales/{id}/inventario:
-    get:
-      tags: [5. Productos e Inventario]
-      summary: Consultar stock exacto de una sucursal
-      description: Acceso EMPLEADO de la sucursal / ADMIN.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Inventario detallado de la sucursal
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/InventarioSucursalDTO'
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
         '403':
-          $ref: '#/components/responses/Forbidden'
+          $ref: '#/components/responses/Http403'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
 
-  /api/inventario/ajustar:
-    post:
-      tags: [5. Productos e Inventario]
-      summary: Ajustar inventario de una sucursal
-      description: Acceso EMPLEADO autorizado de la sucursal / ADMIN. Impide stock negativo.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AjusteInventarioRequest'
+  /api/funciones/{id_funcion}:
+    get:
+      tags:
+        - Funciones
+      summary: Consultar detalle de una función
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdFuncion'
       responses:
         '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
+          description: Detalle de la función
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Funcion'
+        '404':
+          $ref: '#/components/responses/Http404'
 
-  # ==========================================================================
-  # MÓDULO 6: SERVICIOS ADICIONALES
-  # ==========================================================================
+  /api/funciones/{id_funcion}/asientos:
+    get:
+      tags:
+        - Funciones
+      summary: Consultar mapa de asientos libres y ocupados de la función
+      description: >
+        La disponibilidad se calcula cruzando los asientos de la sala con las
+        entradas activas de la función.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdFuncion'
+      responses:
+        '200':
+          description: Grilla de asientos con estado DISPONIBLE u OCUPADO
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DisponibilidadAsiento'
+        '404':
+          $ref: '#/components/responses/Http404'
+
   /api/servicios:
     get:
-      tags: [6. Servicios Adicionales]
-      summary: Catálogo público de servicios adicionales
-      description: Acceso PUBLICO.
+      tags:
+        - Servicios
+      summary: Listar catálogo de servicios adicionales (comida, bebidas, combos, VIP, parking)
+      security: []
       responses:
         '200':
-          description: Lista de servicios disponibles
+          description: Listado de servicios adicionales
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/ServicioPublicoDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Servicio'
     post:
-      tags: [6. Servicios Adicionales]
-      summary: Alta de nuevo servicio adicional
-      description: Acceso ADMIN.
-      security:
-        - FlaskSessionCookie: []
+      tags:
+        - Servicios
+      summary: Crear nuevo servicio adicional
+      description: Solo ADMIN.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServicioCreateRequest'
+              $ref: '#/components/schemas/ServicioCrear'
       responses:
         '201':
-          $ref: '#/components/responses/SuccessMessage'
+          description: Servicio creado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Servicio'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '409':
+          $ref: '#/components/responses/Http409'
 
-  /api/servicios/{id}:
+  /api/servicios/{id_servicio}:
+    get:
+      tags:
+        - Servicios
+      summary: Consultar detalle de un servicio
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/IdServicio'
+      responses:
+        '200':
+          description: Servicio encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Servicio'
+        '404':
+          $ref: '#/components/responses/Http404'
     patch:
-      tags: [6. Servicios Adicionales]
-      summary: Editar precio, estado o configuración de un servicio
-      description: Acceso ADMIN. No altera los precios históricos ya congelados en órdenes previas.
-      security:
-        - FlaskSessionCookie: []
+      tags:
+        - Servicios
+      summary: Modificar campos de un servicio
+      description: Solo ADMIN.
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/IdServicio'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ServicioUpdateRequest'
+              $ref: '#/components/schemas/ServicioActualizar'
       responses:
         '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/funciones/{id}/cupos-servicios:
-    get:
-      tags: [6. Servicios Adicionales]
-      summary: Consultar disponibilidad de cupos de servicios por función
-      description: Acceso PUBLICO / CLIENTE.
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Cupos disponibles para la función
+          description: Servicio actualizado
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/CupoServicioFuncionDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Servicio'
+        '400':
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
         '404':
-          $ref: '#/components/responses/NotFound'
-    post:
-      tags: [6. Servicios Adicionales]
-      summary: Configurar cupos de servicios para una función
-      description: Acceso ADMIN. No permite fijar un cupo inferior a la cantidad ya vendida (409).
-      security:
-        - FlaskSessionCookie: []
+          $ref: '#/components/responses/Http404'
+    delete:
+      tags:
+        - Servicios
+      summary: Eliminar servicio sin compras asociadas
+      description: Solo ADMIN. Rechaza con 409 si el servicio ya figura en compras históricas.
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/IdServicio'
+      responses:
+        '204':
+          description: Servicio eliminado
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
+
+  /api/compras:
+    get:
+      tags:
+        - Compras
+      summary: Consultar compras del usuario autenticado
+      responses:
+        '200':
+          description: Historial de compras del cliente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Compra'
+        '401':
+          $ref: '#/components/responses/Http401'
+    post:
+      tags:
+        - Compras
+      summary: Registrar compra de entradas y servicios adicionales
+      description: >
+        Verifica que los asientos estén libres, calcula el monto total en el servidor,
+        crea la compra, inserta las entradas y servicios, genera el código QR único
+        y envía el comprobante por correo electrónico.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CupoServicioConfigRequest'
+              $ref: '#/components/schemas/CompraCrear'
       responses:
         '201':
-          $ref: '#/components/responses/SuccessMessage'
+          description: Compra confirmada, entradas emitidas y QR generado
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/CompraDetalle'
         '400':
-          $ref: '#/components/responses/BadRequest'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  # ==========================================================================
-  # MÓDULO 7: ÓRDENES, CHECKOUT Y NOTIFICACIÓN
-  # ==========================================================================
-  /api/compras/{id}/confirmar:
-    post:
-      tags: ["7. Órdenes, Checkout y Notificación"]
-      summary: Confirmar pago simulado de compra de cine
-      description: Acceso CLIENTE titular. Transacción todo-o-nada (valida bloqueo vigente, horario de función, stock de productos y cupos de servicios; emite entradas y QR). Si el pago simulado falla devuelve 422.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfirmarPagoRequest'
-      responses:
-        '200':
-          description: Orden confirmada y QR generado
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrdenConfirmadaDTO'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-
-  /api/ordenes/{id}:
-    get:
-      tags: ["7. Órdenes, Checkout y Notificación"]
-      summary: Detalle histórico de orden de cine, importes y QR
-      description: Acceso CLIENTE titular / ADMIN.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Comprobante y desglose de la orden
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/OrdenConfirmadaDTO'
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
         '404':
-          $ref: '#/components/responses/NotFound'
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
 
-  /api/ordenes/{id}/reenviar-comprobante:
-    post:
-      tags: ["7. Órdenes, Checkout y Notificación"]
-      summary: Reintentar envío de comprobante por email
-      description: Acceso CLIENTE titular / ADMIN. No duplica cobros ni regenera códigos QR.
-      security:
-        - FlaskSessionCookie: []
+  /api/compras/{id_compra}:
+    get:
+      tags:
+        - Compras
+      summary: Consultar detalle completo de una compra (entradas, servicios y QR)
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/IdCompra'
       responses:
         '200':
-          $ref: '#/components/responses/SuccessMessage'
-
-  # ==========================================================================
-  # MÓDULO 8: CONTROL DE ACCESO Y CONSUMOS
-  # ==========================================================================
-  /api/control-acceso/validar-qr:
-    post:
-      tags: [8. Control de Acceso y Consumos]
-      summary: Validar y consumir QR de ingreso a sala
-      description: Acceso EMPLEADO sucursal / ADMIN. Habilitado desde 30 min antes de la función hasta el fin de la película. Uso único y atómico (devuelve 409 si se intenta usar por segunda vez).
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CodigoQrRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/control-acceso/entregar-productos:
-    post:
-      tags: [8. Control de Acceso y Consumos]
-      summary: Registrar entrega íntegra de snacks asociados a orden de cine
-      description: Acceso EMPLEADO sucursal / ADMIN. Se entrega en una sola operación desde 30 min antes de la función hasta el cierre del Candy Bar. No vuelve a descontar stock.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [id_orden]
-              properties:
-                id_orden:
-                  type: integer
-                  example: 105
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/control-acceso/validar-servicio:
-    post:
-      tags: [8. Control de Acceso y Consumos]
-      summary: Validar consumo individual de un servicio adicional
-      description: Acceso EMPLEADO sucursal / ADMIN. Valida una unidad de servicio sin requerir QR adicional.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required: [id_detalle_serv]
-              properties:
-                id_detalle_serv:
-                  type: integer
-                  example: 42
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  # ==========================================================================
-  # MÓDULO 9: CANCELACIONES E INCIDENCIAS
-  # ==========================================================================
-  /api/ordenes/{id}/cancelar:
-    post:
-      tags: [9. Cancelaciones e Incidencias]
-      summary: Solicitar cancelación autogestionada y reintegro total
-      description: Acceso CLIENTE titular. Exige más de 60 minutos antes de la función y que ninguna entrada, producto o servicio haya sido utilizado. Restaura stock, cupos y butacas atómicamente.
-      security:
-        - FlaskSessionCookie: []
+          description: Detalle de la compra
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/CompraDetalle'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
+    patch:
+      tags:
+        - Compras
+      summary: Cancelar una compra vigente
+      description: >
+        Cambia estado_qr a CANCELADO (siempre que esté en estado PENDIENTE y dentro
+        del plazo permitido antes de la función) y elimina las filas asociadas en
+        'entradas' para liberar las butacas de la sala.
       parameters:
-        - $ref: '#/components/parameters/IdPathParam'
+        - $ref: '#/components/parameters/IdCompra'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required: [motivo]
-              properties:
-                motivo:
-                  type: string
-                  example: "Imprevisto personal"
+              $ref: '#/components/schemas/CompraCancelar'
       responses:
         '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/incidencias/reasignar-asiento:
-    post:
-      tags: [9. Cancelaciones e Incidencias]
-      summary: Reasignar asiento de una entrada por incidencia técnica
-      description: Acceso ADMIN. Misma función, entrada sin usar, asiento destino libre; conserva precio histórico y QR.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ReasignarAsientoRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
+          description: Compra cancelada y asientos liberados
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Compra'
         '400':
-          $ref: '#/components/responses/BadRequest'
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
         '409':
-          $ref: '#/components/responses/Conflict'
+          $ref: '#/components/responses/Http409'
 
-  # ==========================================================================
-  # MÓDULO 10: REPORTES Y MÉTRICAS
-  # ==========================================================================
-  /api/reportes/ocupacion:
-    get:
-      tags: [10. Reportes y Métricas]
-      summary: Reporte de ocupación comercial y asistencia QR
-      description: Acceso ADMIN. Si no hay datos en el período devuelve HTTP 200 con valores en cero.
-      security:
-        - FlaskSessionCookie: []
+  /api/codigos-qr/{codigo_qr}:
+    patch:
+      tags:
+        - Acceso
+      summary: Validar y consumir código QR al ingresar a la sala
+      description: >
+        Solo ADMIN. Verifica que el QR corresponda a la función indicada y que su
+        estado_qr sea PENDIENTE antes de marcarlo como USADO.
       parameters:
-        - $ref: '#/components/parameters/DesdeParam'
-        - $ref: '#/components/parameters/HastaParam'
-        - name: id_sucursal
-          in: query
-          schema: { type: integer }
-        - name: id_sala
-          in: query
-          schema: { type: integer }
-        - name: id_funcion
-          in: query
-          schema: { type: integer }
-        - name: agrupacion
-          in: query
-          schema: { type: string, enum: [DIA, SUCURSAL, SALA, PELICULA, FUNCION] }
-        - name: incluir_asistencia
-          in: query
-          schema: { type: boolean, default: false }
+        - $ref: '#/components/parameters/CodigoQR'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CodigoQRUsar'
       responses:
         '200':
-          description: Métricas de ocupación
+          description: Código QR validado y marcado como USADO
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ReporteOcupacionDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/CodigoQR'
+        '400':
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
 
-  /api/reportes/recaudacion:
+  /api/estadisticas/ocupacion:
     get:
-      tags: [10. Reportes y Métricas]
-      summary: Reporte de recaudación bruta, reintegros y neta
-      description: Acceso ADMIN. Separa entradas, productos de cine, servicios y Candy Bar independiente.
-      security:
-        - FlaskSessionCookie: []
+      tags:
+        - Estadísticas
+      summary: Consultar porcentaje de ocupación por función
+      description: Solo ADMIN.
       parameters:
-        - $ref: '#/components/parameters/DesdeParam'
-        - $ref: '#/components/parameters/HastaParam'
-        - name: id_sucursal
+        - name: id_funcion
           in: query
-          schema: { type: integer }
-        - name: origen
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: id_pelicula
           in: query
-          schema: { type: string, enum: [TODOS, CINE, CANDYBAR_EXPRESS] }
-        - name: agrupacion
-          in: query
-          schema: { type: string, enum: [DIA, MES, SUCURSAL, ORIGEN] }
-        - name: incluir_desglose
-          in: query
-          schema: { type: boolean, default: true }
+          required: false
+          schema:
+            type: integer
+            minimum: 1
       responses:
         '200':
-          description: Métricas financieras
+          description: Ocupación por función
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ReporteRecaudacionDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Ocupacion'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
 
-  /api/reportes/cancelaciones:
+  /api/estadisticas/ventas-por-genero:
     get:
-      tags: [10. Reportes y Métricas]
-      summary: Reporte de órdenes canceladas e importes reintegrados
-      description: Acceso ADMIN. Incluye desglose de motivos bajo demanda.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/DesdeParam'
-        - $ref: '#/components/parameters/HastaParam'
-        - name: id_sucursal
-          in: query
-          schema: { type: integer }
-        - name: id_funcion
-          in: query
-          schema: { type: integer }
-        - name: agrupacion
-          in: query
-          schema: { type: string }
-        - name: incluir_motivos
-          in: query
-          schema: { type: boolean, default: false }
+      tags:
+        - Estadísticas
+      summary: Consultar ventas agrupadas por género cinematográfico
+      description: Solo ADMIN.
+      responses:
+        '200':
+          description: Ventas por género
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VentaPorGenero'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+
+  /api/estadisticas/franjas-horarias:
+    get:
+      tags:
+        - Estadísticas
+      summary: Consultar horarios de funciones más vendidos
+      description: Solo ADMIN.
+      responses:
+        '200':
+          description: Ventas por franja horaria
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/FranjaHoraria'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+
+  /api/estadisticas/cancelaciones:
+    get:
+      tags:
+        - Estadísticas
+      summary: Consultar resumen de compras canceladas
+      description: Solo ADMIN.
       responses:
         '200':
           description: Resumen de cancelaciones
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/ReporteCancelacionesDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/ResumenCancelaciones'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
 
-  # ==========================================================================
-  # MÓDULO 11: CANDY BAR INDEPENDIENTE
-  # ==========================================================================
-  /api/candybar/productos:
+  /api/peliculas/{id_pelicula}/resenas:
     get:
-      tags: [11. Candy Bar Independiente]
-      summary: Catálogo de productos vendibles en una sucursal para retiro exprés
-      description: Acceso PUBLICO. Requiere query param 'sucursal'. Tope de 12 unidades por producto.
+      tags:
+        - Reseñas opcionales
+      summary: Listar reseñas de una película
+      security: []
       parameters:
-        - name: sucursal
-          in: query
-          required: true
-          schema: { type: integer, example: 1 }
+        - $ref: '#/components/parameters/IdPelicula'
       responses:
         '200':
-          description: Productos activos con disponibilidad en la sucursal
+          description: Reseñas de la película
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/CandyProductoSucursalDTO'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Resena'
         '404':
-          $ref: '#/components/responses/NotFound'
-
-  /api/candybar/pedidos:
-    get:
-      tags: [11. Candy Bar Independiente]
-      summary: Historial de pedidos de Candy Bar del cliente autenticado
-      description: Acceso CLIENTE. Ordenado por fecha_creacion DESC, id_orden DESC.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - name: estado
-          in: query
-          schema:
-            type: string
-            enum: [PENDIENTE_PAGO, PENDIENTE_RETIRO, ENTREGADO, CANCELADA, EXPIRADA, NO_RETIRADO]
-        - $ref: '#/components/parameters/PaginaParam'
-        - $ref: '#/components/parameters/LimiteParam'
-      responses:
-        '200':
-          description: Lista paginada de pedidos propios
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CandyPedidosPaginadosDTO'
+          $ref: '#/components/responses/Http404'
     post:
-      tags: [11. Candy Bar Independiente]
-      summary: Crear pedido independiente de Candy Bar (PENDIENTE_PAGO)
-      description: Acceso CLIENTE. Hasta 12 unidades por ítem distinto. Vigencia de 5 minutos (nunca después de las 00:30). Solo un PENDIENTE_PAGO activo por cliente.
-      security:
-        - FlaskSessionCookie: []
+      tags:
+        - Reseñas opcionales
+      summary: Crear reseña de una película vista
+      description: >
+        Solo pueden reseñar los usuarios que tengan una compra para esa película
+        con estado_qr = USADO.
+      parameters:
+        - $ref: '#/components/parameters/IdPelicula'
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CandyPedidoCreateRequest'
+              $ref: '#/components/schemas/ResenaCrear'
       responses:
         '201':
-          description: Pedido creado con precios congelados
+          description: Reseña creada
           content:
             application/json:
               schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CandyPedidoDetalleDTO'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/candybar/pedidos/{id}:
-    get:
-      tags: [11. Candy Bar Independiente]
-      summary: Consultar detalle de pedido de Candy Bar
-      description: Acceso CLIENTE titular / ADMIN. El campo qr_imagen (base64) se expone solo al CLIENTE titular en estado PENDIENTE_RETIRO, nunca al ADMIN.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          description: Detalle del pedido
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CandyPedidoDetalleDTO'
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/Resena'
+        '400':
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
         '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags: [11. Candy Bar Independiente]
-      summary: Cancelar pedido de Candy Bar en estado PENDIENTE_PAGO
-      description: Acceso CLIENTE titular. No aplica reintegro ni reposición de stock.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
+          $ref: '#/components/responses/Http404'
         '409':
-          $ref: '#/components/responses/Conflict'
+          $ref: '#/components/responses/Http409'
 
-  /api/candybar/pedidos/{id}/confirmar:
-    post:
-      tags: [11. Candy Bar Independiente]
-      summary: Confirmar pago simulado de pedido de Candy Bar
-      description: Acceso CLIENTE titular. Antes de las 00:30; descuenta stock atómicamente y emite QR de retiro único.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ConfirmarPagoRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-
-  /api/candybar/retiros/validar:
-    post:
-      tags: [11. Candy Bar Independiente]
-      summary: Pre-validar QR de retiro en mostrador (sin consumirlo)
-      description: Acceso EMPLEADO sucursal / ADMIN. Verifica sucursal, vigencia antes de la 01:00 AM y estado PENDIENTE_RETIRO sin marcarlo como entregado.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CodigoQrRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/candybar/retiros/confirmar:
-    post:
-      tags: [11. Candy Bar Independiente]
-      summary: Confirmar entrega física de pedido Candy Bar y consumir QR
-      description: Acceso EMPLEADO sucursal / ADMIN. Consume el QR en una única entrega completa antes de la 01:00 AM y audita al empleado.
-      security:
-        - FlaskSessionCookie: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CodigoQrRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-  /api/candybar/admin/pedidos:
-    get:
-      tags: [11. Candy Bar Independiente]
-      summary: Listado administrativo de pedidos de Candy Bar (sin QR)
-      description: Acceso ADMIN. Nunca expone el código ni la imagen QR.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - name: id_sucursal
-          in: query
-          schema: { type: integer }
-        - name: estado
-          in: query
-          schema: { type: string }
-        - $ref: '#/components/parameters/DesdeParam'
-        - $ref: '#/components/parameters/HastaParam'
-        - $ref: '#/components/parameters/PaginaParam'
-        - $ref: '#/components/parameters/LimiteParam'
-      responses:
-        '200':
-          description: Resumen paginado de pedidos
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - $ref: '#/components/schemas/SuccessEnvelope'
-                  - type: object
-                    properties:
-                      data:
-                        $ref: '#/components/schemas/CandyPedidosPaginadosDTO'
-
-  /api/candybar/pedidos/{id}/resolver-inventario:
-    post:
-      tags: [11. Candy Bar Independiente]
-      summary: Auditoría y reingreso selectivo de stock para pedidos NO_RETIRADO
-      description: Acceso EMPLEADO sucursal / ADMIN. Solo para estado NO_RETIRADO. La suma de cantidad_reingresada + cantidad_descartada debe igualar la cantidad comprada.
-      security:
-        - FlaskSessionCookie: []
-      parameters:
-        - $ref: '#/components/parameters/IdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ResolverInventarioRequest'
-      responses:
-        '200':
-          $ref: '#/components/responses/SuccessMessage'
-        '409':
-          $ref: '#/components/responses/Conflict'
-
-# ============================================================================
-# COMPONENTS (SCHEMAS, PARAMETERS, SECURITY, RESPONSES)
-# ============================================================================
 components:
   securitySchemes:
-    FlaskSessionCookie:
+    sessionAuth:
       type: apiKey
       in: cookie
       name: session
-      description: >
-        Autenticación por sesión de Flask (Roles: CLIENTE, EMPLEADO de sucursal asignada, ADMIN).
-        El Frontend Flask consume el Backend mediante Python requests propagando la sesión activa.
+      description: Sesión autenticada del backend Flask.
 
   parameters:
-    IdPathParam:
-      name: id
+    IdPelicula:
+      name: id_pelicula
       in: path
       required: true
       schema:
         type: integer
         minimum: 1
-    PaginaParam:
-      name: pagina
-      in: query
+    IdSucursal:
+      name: id_sucursal
+      in: path
+      required: true
       schema:
         type: integer
-        default: 1
         minimum: 1
-    LimiteParam:
-      name: limite
-      in: query
+    IdFuncion:
+      name: id_funcion
+      in: path
+      required: true
       schema:
         type: integer
-        default: 10
         minimum: 1
-        maximum: 50
-    DesdeParam:
-      name: desde
-      in: query
+    IdServicio:
+      name: id_servicio
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    IdCompra:
+      name: id_compra
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    CodigoQR:
+      name: codigo_qr
+      in: path
+      required: true
       schema:
         type: string
-        format: date
-    HastaParam:
-      name: hasta
-      in: query
-      schema:
-        type: string
-        format: date
 
   responses:
-    SuccessMessage:
-      description: Operación ejecutada con éxito
+    Http400:
+      description: Solicitud inválida o datos faltantes
       content:
         application/json:
           schema:
-            allOf:
-              - $ref: '#/components/schemas/SuccessEnvelope'
-              - type: object
-                properties:
-                  data:
-                    type: object
-                    properties:
-                      mensaje:
-                        type: string
-                        example: "Operación procesada correctamente."
-    BadRequest:
-      description: Datos de entrada inválidos o violación de formato (HTTP 400)
+            $ref: '#/components/schemas/Error'
+    Http401:
+      description: No autenticado
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Unauthorized:
-      description: No autenticado o credenciales inválidas (HTTP 401)
+            $ref: '#/components/schemas/Error'
+    Http403:
+      description: Acceso denegado para el rol actual
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Forbidden:
-      description: Permisos insuficientes para el rol o sucursal asignada (HTTP 403)
+            $ref: '#/components/schemas/Error'
+    Http404:
+      description: Recurso no encontrado
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    NotFound:
-      description: Recurso inexistente o ajeno al usuario (HTTP 404)
+            $ref: '#/components/schemas/Error'
+    Http409:
+      description: Conflicto con el estado actual o reglas de negocio
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    Conflict:
-      description: Conflicto con las reglas de negocio o concurrencia (HTTP 409)
+            $ref: '#/components/schemas/Error'
+    Http500:
+      description: Error interno o falla en servicio externo
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
-    UnprocessableEntity:
-      description: Pago simulado rechazado (HTTP 422)
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorEnvelope'
+            $ref: '#/components/schemas/Error'
 
   schemas:
-    SuccessEnvelope:
-      type: object
-      required: [status, data]
-      properties:
-        status:
-          type: string
-          example: "success"
-        data:
-          type: object
-
-    ErrorEnvelope:
+    Error:
       type: object
       required: [status, code, message]
       properties:
         status:
           type: string
-          example: "error"
+          enum: [error]
+          example: error
         code:
           type: string
-          example: "CONFLICTO_NEGOCIO"
+          example: RECURSO_NO_ENCONTRADO
         message:
           type: string
-          example: "Explicación detallada del error de validación o regla de negocio."
+          example: No se encontró el recurso solicitado
 
-    RegistroRequest:
+    UsuarioRegistro:
       type: object
       required: [nombre, email, password]
       properties:
         nombre:
           type: string
-          example: "Martín Pérez"
+          maxLength: 100
+          example: Ana García
         email:
           type: string
           format: email
-          example: "martin@example.com"
+          maxLength: 100
+          example: ana@example.com
         password:
           type: string
           format: password
-          minLength: 8
-          example: "Secreto123!"
+          minLength: 6
+          example: clave_segura123
 
-    LoginRequest:
+    Credenciales:
       type: object
       required: [email, password]
       properties:
         email:
           type: string
           format: email
-          example: "martin@example.com"
+          example: ana@example.com
         password:
           type: string
           format: password
-          example: "Secreto123!"
+          example: clave_segura123
 
-    UsuarioPerfilDTO:
+    Usuario:
       type: object
+      required: [id_usuario, nombre, email, rol]
       properties:
         id_usuario:
           type: integer
-          example: 3
+          minimum: 1
+          example: 2
         nombre:
           type: string
-          example: "Martín Pérez"
+          example: Ana García
         email:
           type: string
-          example: "martin@example.com"
+          format: email
+          example: ana@example.com
         rol:
           type: string
-          enum: [CLIENTE, EMPLEADO, ADMIN]
-          example: "CLIENTE"
-        id_sucursal:
-          type: integer
-          nullable: true
-          example: null
+          enum: [CLIENTE, ADMIN]
+          example: CLIENTE
 
-    AuthResponse:
-      allOf:
-        - $ref: '#/components/schemas/SuccessEnvelope'
-        - type: object
-          properties:
-            data:
-              $ref: '#/components/schemas/UsuarioPerfilDTO'
-
-    PeliculaDTO:
+    Perfil:
       type: object
+      required: [usuario, compras]
+      properties:
+        usuario:
+          $ref: '#/components/schemas/Usuario'
+        compras:
+          type: array
+          items:
+            $ref: '#/components/schemas/Compra'
+
+    Pelicula:
+      type: object
+      required: [id_pelicula, titulo, genero, duracion_min, clasificacion]
       properties:
         id_pelicula:
           type: integer
+          minimum: 1
           example: 1
         titulo:
           type: string
-          example: "Gladiator II"
+          example: Gladiator II
         sinopsis:
           type: string
-          example: "Años después de presenciar la muerte del héroe Máximo, Lucio debe entrar al Coliseo."
-        duracion_minutos:
-          type: integer
-          example: 148
-        genero:
-          type: string
-          example: "Acción"
-        clasificacion:
-          type: string
-          example: "+16"
-        url_poster:
-          type: string
-          example: "https://image.tmdb.org/t/p/w500/gladiator2.jpg"
-        tiene_funciones_disponibles:
-          type: boolean
-          example: true
-
-    PeliculaExternaDTO:
-      type: object
-      properties:
-        id_externo:
-          type: string
-          example: "tt9218128"
-        titulo:
-          type: string
-          example: "Gladiator II"
-        anio:
-          type: integer
-          example: 2024
-        sinopsis:
-          type: string
-          example: "Años después de presenciar la muerte del héroe Máximo, Lucio debe entrar al Coliseo."
-        duracion_min:
-          type: integer
-          example: 148
-        genero:
-          type: string
-          example: "Acción"
-        clasificacion:
-          type: string
-          example: "+16"
+          example: Lucio ingresa al Coliseo para luchar por el destino de Roma.
         poster_url:
           type: string
-          example: "https://image.tmdb.org/t/p/w500/gladiator2.jpg"
+          format: uri
+          example: https://image.tmdb.org/t/p/w500/demo1.jpg
+        genero:
+          type: string
+          example: Acción
+        duracion_min:
+          type: integer
+          minimum: 1
+          example: 148
+        clasificacion:
+          type: string
+          example: '+16'
 
-    PeliculaCreateRequest:
+    PeliculaCrear:
       type: object
       required: [titulo, genero, duracion_min, clasificacion]
       properties:
         titulo:
           type: string
-          example: "Gladiator II"
+          example: Gladiator II
         sinopsis:
           type: string
-          example: "Años después de presenciar la muerte del héroe Máximo, Lucio debe entrar al Coliseo."
+          example: Lucio ingresa al Coliseo para luchar por el destino de Roma.
         poster_url:
           type: string
-          example: "https://image.tmdb.org/t/p/w500/gladiator2.jpg"
+          format: uri
+          example: https://image.tmdb.org/t/p/w500/demo1.jpg
         genero:
           type: string
-          example: "Acción"
+          example: Acción
         duracion_min:
           type: integer
+          minimum: 1
           example: 148
         clasificacion:
           type: string
-          example: "+16"
+          example: '+16'
 
-    SucursalDTO:
+    PeliculaExterna:
       type: object
+      required: [id_externo, titulo]
+      properties:
+        id_externo:
+          type: string
+          example: tt9218128
+        titulo:
+          type: string
+          example: Gladiator II
+        sinopsis:
+          type: string
+          example: Lucio ingresa al Coliseo para luchar por el destino de Roma.
+        poster_url:
+          type: string
+          format: uri
+          example: https://image.tmdb.org/t/p/w500/demo1.jpg
+        duracion_min:
+          type: integer
+          minimum: 1
+          example: 148
+        clasificacion:
+          type: string
+          example: '+16'
+        genero:
+          type: string
+          example: Acción
+
+    Sucursal:
+      type: object
+      required: [id_sucursal, nombre, direccion, ciudad]
       properties:
         id_sucursal:
           type: integer
+          minimum: 1
           example: 1
         nombre:
           type: string
-          example: "Cine Paradiso Central"
+          example: Cine Paradiso Central
         direccion:
           type: string
-          example: "Av. Corrientes 1234"
+          example: Av. Corrientes 1234
         ciudad:
           type: string
-          example: "CABA"
+          example: CABA
 
-    SalaDTO:
+    Sala:
       type: object
+      required: [id_sala, id_sucursal, nombre, capacidad]
       properties:
         id_sala:
           type: integer
+          minimum: 1
           example: 1
         id_sucursal:
           type: integer
+          minimum: 1
           example: 1
         nombre:
           type: string
-          example: "Sala 1 - Victorian IMAX"
+          example: Sala 1
         capacidad:
           type: integer
-          example: 32
-        estado:
-          type: string
-          enum: [ACTIVO, INACTIVO, MANTENIMIENTO]
-          example: "ACTIVO"
+          minimum: 1
+          example: 30
 
-    FuncionCreateRequest:
+    SalaCrear:
       type: object
-      required: [id_pelicula, id_sala, fecha_hora, precio_base]
+      required: [nombre, capacidad]
       properties:
-        id_pelicula:
-          type: integer
-          example: 1
-        id_sala:
-          type: integer
-          example: 1
-        fecha_hora:
+        nombre:
           type: string
-          format: date-time
-          example: "2026-10-26T20:00:00-03:00"
-        precio_base:
-          type: number
-          format: double
-          example: 4500.00
-
-    FuncionDetalleDTO:
-      type: object
-      properties:
-        id_funcion:
-          type: integer
-          example: 1
-        id_pelicula:
-          type: integer
-          example: 1
-        pelicula:
-          type: string
-          example: "Gladiator II"
-        id_sucursal:
-          type: integer
-          example: 1
-        sucursal:
-          type: string
-          example: "Cine Paradiso Central"
-        id_sala:
-          type: integer
-          example: 1
-        sala:
-          type: string
-          example: "Sala 1 - Victorian IMAX"
-        fecha_hora:
-          type: string
-          format: date-time
-          example: "2026-10-26T20:00:00-03:00"
+          maxLength: 50
+          example: Sala 3
         capacidad:
           type: integer
-          example: 32
-        butacas_disponibles:
-          type: integer
-          example: 28
-        precio_base:
-          type: number
-          example: 4500.00
-        estado:
-          type: string
-          enum: [PROGRAMADA, EN_CURSO, FINALIZADA, CANCELADA]
-          example: "PROGRAMADA"
-        permite_compra:
-          type: boolean
-          example: true
+          minimum: 1
+          example: 30
 
-    AsientoFuncionDTO:
+    DisponibilidadAsiento:
       type: object
+      required: [id_asiento, fila, numero, estado]
       properties:
         id_asiento:
           type: integer
-          example: 19
+          minimum: 1
+          example: 1
         fila:
           type: string
-          example: "C"
+          example: A
         numero:
+          type: integer
+          minimum: 1
+          example: 1
+        estado:
           type: string
-          example: "3"
+          enum: [DISPONIBLE, OCUPADO]
+          example: DISPONIBLE
+
+    Funcion:
+      type: object
+      required: [id_funcion, id_pelicula, id_sala, fecha_hora, precio_entrada]
+      properties:
+        id_funcion:
+          type: integer
+          minimum: 1
+          example: 1
+        id_pelicula:
+          type: integer
+          minimum: 1
+          example: 1
+        titulo_pelicula:
+          type: string
+          example: Gladiator II
+        id_sala:
+          type: integer
+          minimum: 1
+          example: 1
+        nombre_sala:
+          type: string
+          example: Sala 1
+        id_sucursal:
+          type: integer
+          minimum: 1
+          example: 1
+        nombre_sucursal:
+          type: string
+          example: Cine Paradiso Central
+        fecha_hora:
+          type: string
+          format: date-time
+          example: '2026-11-05T20:00:00-03:00'
+        precio_entrada:
+          type: number
+          format: double
+          minimum: 0
+          example: 4500.0
+
+    FuncionCrear:
+      type: object
+      required: [id_pelicula, id_sala, fecha_hora, precio_entrada]
+      properties:
+        id_pelicula:
+          type: integer
+          minimum: 1
+          example: 1
+        id_sala:
+          type: integer
+          minimum: 1
+          example: 1
+        fecha_hora:
+          type: string
+          format: date-time
+          example: '2026-11-05T20:00:00-03:00'
+        precio_entrada:
+          type: number
+          format: double
+          minimum: 0
+          example: 4500.0
+
+    Servicio:
+      type: object
+      required: [id_servicio, nombre, tipo, precio]
+      properties:
+        id_servicio:
+          type: integer
+          minimum: 1
+          example: 1
+        nombre:
+          type: string
+          example: Combo Popcorn + Gaseosa
+        descripcion:
+          type: string
+          example: Balde grande de pochoclos y gaseosa 500ml
         tipo:
           type: string
-          enum: [NORMAL, VIP, DISCAPACITADO]
-          example: "VIP"
-        estado_visual:
-          type: string
-          enum: [INHABILITADO, OCUPADO, BLOQUEADO, DISPONIBLE]
-          example: "DISPONIBLE"
+          enum: [COMIDA, BEBIDA, COMBO, ESTACIONAMIENTO, VIP, OTRO]
+          example: COMBO
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 3500.0
 
-    CompraIniciarRequest:
+    ServicioCrear:
       type: object
+      required: [nombre, tipo, precio]
+      properties:
+        nombre:
+          type: string
+          example: Combo Popcorn + Gaseosa
+        descripcion:
+          type: string
+          example: Balde grande de pochoclos y gaseosa 500ml
+        tipo:
+          type: string
+          enum: [COMIDA, BEBIDA, COMBO, ESTACIONAMIENTO, VIP, OTRO]
+          example: COMBO
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 3500.0
+
+    ServicioActualizar:
+      type: object
+      properties:
+        nombre:
+          type: string
+          example: Combo Popcorn + Gaseosa
+        descripcion:
+          type: string
+          example: Balde grande de pochoclos y gaseosa 500ml
+        tipo:
+          type: string
+          enum: [COMIDA, BEBIDA, COMBO, ESTACIONAMIENTO, VIP, OTRO]
+          example: COMBO
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 3800.0
+
+    ServicioEnCompra:
+      type: object
+      required: [id_servicio, cantidad]
+      properties:
+        id_servicio:
+          type: integer
+          minimum: 1
+          example: 1
+        cantidad:
+          type: integer
+          minimum: 1
+          example: 1
+
+    CompraCrear:
+      type: object
+      description: Registra una compra para una función, asignando asientos y servicios opcionales.
       required: [id_funcion, asientos_ids]
       properties:
         id_funcion:
           type: integer
+          minimum: 1
           example: 1
         asientos_ids:
           type: array
-          minItems: 1
-          maxItems: 6
-          uniqueItems: true
           items:
             type: integer
-          example: [19, 20]
-
-    CompraActualizarRequest:
-      type: object
-      properties:
-        productos:
-          type: array
-          items:
-            type: object
-            required: [id_producto, cantidad]
-            properties:
-              id_producto: { type: integer, example: 1 }
-              cantidad: { type: integer, minimum: 1, example: 2 }
+            minimum: 1
+          minItems: 1
+          uniqueItems: true
+          example: [1, 2]
         servicios:
           type: array
           items:
-            type: object
-            required: [id_servicio, cantidad]
-            properties:
-              id_servicio: { type: integer, example: 1 }
-              cantidad: { type: integer, minimum: 1, example: 1 }
+            $ref: '#/components/schemas/ServicioEnCompra'
 
-    ItemProductoOrdenDTO:
+    Compra:
       type: object
+      required: [id_compra, id_usuario, fecha_compra, monto_total, codigo_qr, estado_qr]
       properties:
-        id_producto:
+        id_compra:
           type: integer
+          minimum: 1
           example: 1
-        nombre:
-          type: string
-          example: "Combo Victoriano Popcorn"
-        cantidad:
+        id_usuario:
           type: integer
-          example: 1
-        precio_unitario:
-          type: number
-          example: 3500.00
-        subtotal:
-          type: number
-          example: 3500.00
-        estado:
-          type: string
-          enum: [PENDIENTE, ENTREGADO, CANCELADO, NO_RETIRADO]
-          example: "PENDIENTE"
-
-    ItemServicioOrdenDTO:
-      type: object
-      properties:
-        id_detalle_serv:
-          type: integer
-          example: 10
-        id_servicio:
-          type: integer
-          example: 1
-        nombre:
-          type: string
-          example: "Estacionamiento Reservado"
-        cantidad:
-          type: integer
-          example: 1
-        precio_unitario:
-          type: number
-          example: 2000.00
-        subtotal:
-          type: number
-          example: 2000.00
-        estado:
-          type: string
-          enum: [PENDIENTE, UTILIZADO, CANCELADO]
-          example: "PENDIENTE"
-
-    CompraDetalleDTO:
-      type: object
-      properties:
-        id_orden:
-          type: integer
-          example: 105
-        id_funcion:
-          type: integer
-          example: 1
-        estado:
-          type: string
-          enum: [PENDIENTE, CONFIRMADA, CANCELADA, EXPIRADA]
-          example: "PENDIENTE"
-        vencimiento_bloqueo:
+          minimum: 1
+          example: 2
+        fecha_compra:
           type: string
           format: date-time
-          example: "2026-10-26T19:35:00-03:00"
-        total:
+          example: '2026-11-01T18:30:00-03:00'
+        monto_total:
           type: number
-          example: 14500.00
-        asientos:
-          type: array
-          items:
-            type: integer
-          example: [19, 20]
-        productos:
-          type: array
-          items:
-            $ref: '#/components/schemas/ItemProductoOrdenDTO'
-        servicios:
-          type: array
-          items:
-            $ref: '#/components/schemas/ItemServicioOrdenDTO'
+          format: double
+          minimum: 0
+          example: 12500.0
+        codigo_qr:
+          type: string
+          example: QR-8F92A1B3
+        estado_qr:
+          type: string
+          enum: [PENDIENTE, USADO, CANCELADO]
+          example: PENDIENTE
 
-    ProductoPublicoDTO:
+    Entrada:
       type: object
+      required: [id_entrada, id_compra, id_funcion, id_asiento, precio]
       properties:
-        id_producto:
+        id_entrada:
           type: integer
+          minimum: 1
           example: 1
-        nombre:
-          type: string
-          example: "Combo Victoriano Popcorn"
-        descripcion:
-          type: string
-          example: "Pochoclos balde mediano + 1 Gaseosa 500ml"
-        tipo:
-          type: string
-          enum: [COMIDA, BEBIDA, COMBO, MERCHANDISING]
-          example: "COMBO"
-        precio_base:
-          type: number
-          example: 3500.00
-        agotado:
-          type: boolean
-          example: false
-
-    ProductoCreateRequest:
-      type: object
-      required: [nombre, tipo, precio_base]
-      properties:
-        nombre: { type: string, example: "Combo Imperial Real" }
-        descripcion: { type: string, example: "Pochoclos balde grande + 2 Gaseosas grandes + Bombones" }
-        tipo: { type: string, enum: [COMIDA, BEBIDA, COMBO, MERCHANDISING], example: "COMBO" }
-        precio_base: { type: number, example: 6200.00 }
-        estado: { type: string, enum: [ACTIVO, INACTIVO], default: ACTIVO }
-
-    InventarioSucursalDTO:
-      type: object
-      properties:
-        id_producto: { type: integer, example: 1 }
-        nombre: { type: string, example: "Combo Victoriano Popcorn" }
-        stock_actual: { type: integer, example: 50 }
-        stock_minimo: { type: integer, example: 10 }
-
-    AjusteInventarioRequest:
-      type: object
-      required: [id_sucursal, id_producto, cantidad_ajuste, motivo]
-      properties:
-        id_sucursal: { type: integer, example: 1 }
-        id_producto: { type: integer, example: 1 }
-        cantidad_ajuste:
+        id_compra:
           type: integer
-          description: Valor positivo (ingreso) o negativo (merma/egreso)
-          example: 25
-        motivo: { type: string, example: "Reposición de lote semanal en depósito" }
-
-    ServicioPublicoDTO:
-      type: object
-      properties:
-        id_servicio:
-          type: integer
-          example: 1
-        nombre:
-          type: string
-          example: "Estacionamiento Reservado"
-        descripcion:
-          type: string
-          example: "Cochera fija techada dentro del predio del cine"
-        tipo:
-          type: string
-          enum: [ESTACIONAMIENTO, ACCESO_VIP, LENTES_3D, OTRO]
-          example: "ESTACIONAMIENTO"
-        precio_base:
-          type: number
-          example: 2000.00
-        requiere_cupo:
-          type: boolean
-          example: true
-        estado:
-          type: string
-          enum: [ACTIVO, INACTIVO]
-          example: "ACTIVO"
-
-    ServicioCreateRequest:
-      type: object
-      required: [nombre, tipo, precio_base, requiere_cupo]
-      properties:
-        nombre: { type: string, example: "Acceso VIP Lounge" }
-        descripcion: { type: string, example: "Ingreso exclusivo a sala victoriana pre-función" }
-        tipo: { type: string, enum: [ESTACIONAMIENTO, ACCESO_VIP, LENTES_3D, OTRO], example: "ACCESO_VIP" }
-        precio_base: { type: number, example: 1500.00 }
-        requiere_cupo: { type: boolean, default: true }
-
-    ServicioUpdateRequest:
-      type: object
-      properties:
-        precio_base: { type: number, example: 2200.00 }
-        estado: { type: string, enum: [ACTIVO, INACTIVO], example: "ACTIVO" }
-        requiere_cupo: { type: boolean, example: true }
-
-    CupoServicioFuncionDTO:
-      type: object
-      properties:
-        id_cupo:
-          type: integer
+          minimum: 1
           example: 1
         id_funcion:
           type: integer
+          minimum: 1
+          example: 1
+        id_asiento:
+          type: integer
+          minimum: 1
+          example: 1
+        fila:
+          type: string
+          example: A
+        numero:
+          type: integer
+          example: 1
+        precio:
+          type: number
+          format: double
+          minimum: 0
+          example: 4500.0
+
+    DetalleCompraServicio:
+      type: object
+      required: [id_detalle, id_compra, id_servicio, cantidad, precio_unitario]
+      properties:
+        id_detalle:
+          type: integer
+          minimum: 1
+          example: 1
+        id_compra:
+          type: integer
+          minimum: 1
           example: 1
         id_servicio:
           type: integer
+          minimum: 1
           example: 1
         nombre_servicio:
           type: string
-          example: "Estacionamiento Reservado"
-        cupo_total:
+          example: Combo Popcorn + Gaseosa
+        cantidad:
           type: integer
-          example: 20
-        cupo_disponible:
-          type: integer
-          example: 14
-        estado:
-          type: string
-          enum: [DISPONIBLE, AGOTADO]
-          example: "DISPONIBLE"
+          minimum: 1
+          example: 1
+        precio_unitario:
+          type: number
+          format: double
+          minimum: 0
+          example: 3500.0
 
-    CupoServicioConfigRequest:
+    CompraDetalle:
       type: object
-      required: [id_servicio, cupo_total]
+      required: [compra, entradas, servicios]
       properties:
-        id_servicio: { type: integer, example: 1 }
-        cupo_total: { type: integer, minimum: 0, example: 20 }
-
-    ConfirmarPagoRequest:
-      type: object
-      required: [pago_simulado]
-      properties:
-        pago_simulado:
-          type: object
-          required: [metodo, resultado_aprobado]
-          properties:
-            metodo:
-              type: string
-              example: "TARJETA_CREDITO"
-            resultado_aprobado:
-              type: boolean
-              example: true
-
-    OrdenConfirmadaDTO:
-      type: object
-      properties:
-        id_orden: { type: integer, example: 105 }
-        estado: { type: string, example: "CONFIRMADA" }
-        total: { type: number, example: 14500.00 }
-        referencia_pago: { type: string, example: "SIM-PAY-20261026-00105" }
-        codigo_qr:
-          type: string
-          description: Código QR único asociado a la orden (según tabla codigos_qr en schema.sql)
-          example: "QR-9f86d081884c7d659a2feaa0c55ad015"
+        compra:
+          $ref: '#/components/schemas/Compra'
         entradas:
           type: array
           items:
-            type: object
-            properties:
-              id_entrada: { type: integer, example: 210 }
-              id_asiento: { type: integer, example: 19 }
-              fila: { type: string, example: "C" }
-              numero: { type: string, example: "3" }
-              precio_unitario: { type: number, example: 4500.00 }
-              # Si el grupo decide pasar a 1 QR por entrada, descomentar la línea de abajo:
-              # codigo_qr: { type: string }
-        productos:
-          type: array
-          items:
-            $ref: '#/components/schemas/ItemProductoOrdenDTO'
+            $ref: '#/components/schemas/Entrada'
         servicios:
           type: array
           items:
-            $ref: '#/components/schemas/ItemServicioOrdenDTO'
+            $ref: '#/components/schemas/DetalleCompraServicio'
 
-    CodigoQrRequest:
+    CompraCancelar:
       type: object
-      required: [codigo_qr]
+      required: [estado_qr]
+      properties:
+        estado_qr:
+          type: string
+          enum: [CANCELADO]
+          example: CANCELADO
+
+    CodigoQR:
+      type: object
+      required: [codigo_qr, estado_qr]
       properties:
         codigo_qr:
           type: string
-          example: "QR-9f86d081884c7d659a2feaa0c55ad015"
-
-    ReasignarAsientoRequest:
-      type: object
-      required: [id_entrada, id_asiento_nuevo, motivo]
-      properties:
-        id_entrada: { type: integer, example: 210 }
-        id_asiento_nuevo: { type: integer, example: 21 }
-        motivo: { type: string, example: "Butaca B4 con desperfecto físico" }
-
-    ReporteOcupacionDTO:
-      type: object
-      properties:
-        desde:
+          example: QR-8F92A1B3
+        estado_qr:
           type: string
-          format: date
-          example: "2026-10-01"
-        hasta:
+          enum: [PENDIENTE, USADO, CANCELADO]
+          example: USADO
+
+    CodigoQRUsar:
+      type: object
+      required: [id_funcion]
+      properties:
+        id_funcion:
+          type: integer
+          minimum: 1
+          example: 1
+
+    Resena:
+      type: object
+      required: [id_resena, id_usuario, id_pelicula, puntuacion, fecha]
+      properties:
+        id_resena:
+          type: integer
+          minimum: 1
+          example: 1
+        id_usuario:
+          type: integer
+          minimum: 1
+          example: 2
+        nombre_usuario:
           type: string
-          format: date
-          example: "2026-10-31"
-        butacas_habilitadas_totales:
+          example: Ana García
+        id_pelicula:
           type: integer
-          example: 320
-        entradas_vigentes_vendidas:
+          minimum: 1
+          example: 1
+        puntuacion:
           type: integer
-          example: 240
-        ocupacion_comercial_porcentaje:
+          minimum: 1
+          maximum: 5
+          example: 5
+        comentario:
+          type: string
+          example: Excelente película y muy buena sala.
+        fecha:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:15:00-03:00'
+
+    ResenaCrear:
+      type: object
+      required: [puntuacion]
+      properties:
+        puntuacion:
+          type: integer
+          minimum: 1
+          maximum: 5
+          example: 5
+        comentario:
+          type: string
+          example: Excelente película y muy buena sala.
+
+    Ocupacion:
+      type: object
+      required: [id_funcion, capacidad, entradas_vendidas, porcentaje_ocupacion]
+      properties:
+        id_funcion:
+          type: integer
+          minimum: 1
+          example: 1
+        titulo_pelicula:
+          type: string
+          example: Gladiator II
+        nombre_sala:
+          type: string
+          example: Sala 1
+        fecha_hora:
+          type: string
+          format: date-time
+          example: '2026-11-05T20:00:00-03:00'
+        capacidad:
+          type: integer
+          minimum: 1
+          example: 30
+        entradas_vendidas:
+          type: integer
+          minimum: 0
+          example: 15
+        porcentaje_ocupacion:
           type: number
           format: double
-          example: 75.0
-        asistencia_real_qr_usados:
-          type: integer
-          nullable: true
-          example: 218
-        desglose:
-          type: array
-          items:
-            type: object
-            properties:
-              referencia: { type: string, example: "Sala 1 - Victorian IMAX" }
-              butacas_habilitadas: { type: integer, example: 32 }
-              entradas_vendidas: { type: integer, example: 24 }
-              porcentaje_ocupacion: { type: number, example: 75.0 }
+          minimum: 0
+          example: 50.0
 
-    ReporteRecaudacionDTO:
+    VentaPorGenero:
       type: object
+      required: [genero, total_ventas, entradas_vendidas]
       properties:
-        desde:
+        genero:
           type: string
-          format: date
-          example: "2026-10-01"
-        hasta:
-          type: string
-          format: date
-          example: "2026-10-31"
-        ventas_brutas:
+          example: Acción
+        total_ventas:
           type: number
-          example: 1850000.00
-        reintegros_totales:
-          type: number
-          example: 95000.00
-        recaudacion_neta:
-          type: number
-          example: 1755000.00
-        desglose_por_rubro:
-          type: object
-          properties:
-            entradas_cine: { type: number, example: 1100000.00 }
-            productos_cine: { type: number, example: 350000.00 }
-            servicios_adicionales: { type: number, example: 125000.00 }
-            candybar_independiente: { type: number, example: 180000.00 }
+          format: double
+          minimum: 0
+          example: 67500.0
+        entradas_vendidas:
+          type: integer
+          minimum: 0
+          example: 15
 
-    ReporteCancelacionesDTO:
+    FranjaHoraria:
       type: object
+      required: [hora, entradas_vendidas]
       properties:
-        desde:
+        hora:
           type: string
-          format: date
-          example: "2026-10-01"
-        hasta:
-          type: string
-          format: date
-          example: "2026-10-31"
-        cantidad_ordenes_canceladas:
+          example: '20:00'
+        entradas_vendidas:
           type: integer
-          example: 8
-        importe_total_reintegrado:
-          type: number
-          example: 95000.00
-        motivos:
-          type: array
-          items:
-            type: object
-            properties:
-              tipo:
-                type: string
-                enum: [CLIENTE_AUTOGESTION, ADMIN_EXCEPCION, FUERZA_MAYOR]
-                example: "CLIENTE_AUTOGESTION"
-              motivo:
-                type: string
-                example: "Imprevisto personal"
-              cantidad:
-                type: integer
-                example: 6
-              importe_reintegrado:
-                type: number
-                example: 72000.00
+          minimum: 0
+          example: 15
 
-    CandyProductoSucursalDTO:
+    ResumenCancelaciones:
       type: object
+      required: [total_cancelaciones]
       properties:
-        id_producto:
+        total_cancelaciones:
           type: integer
-          example: 1
-        nombre:
-          type: string
-          example: "Combo Victoriano Popcorn"
-        descripcion:
-          type: string
-          example: "Pochoclos balde mediano + 1 Gaseosa 500ml"
-        tipo:
-          type: string
-          enum: [COMIDA, BEBIDA, COMBO, MERCHANDISING]
-          example: "COMBO"
-        precio_base:
-          type: number
-          example: 3500.00
-        stock_disponible:
-          type: integer
-          example: 50
-        maximo_por_pedido:
-          type: integer
-          example: 12
-
-    CandyPedidoCreateRequest:
-      type: object
-      required: [id_sucursal, productos]
-      properties:
-        id_sucursal:
-          type: integer
-          example: 1
-        productos:
-          type: array
-          minItems: 1
-          items:
-            type: object
-            required: [id_producto, cantidad]
-            properties:
-              id_producto: { type: integer, example: 1 }
-              cantidad: { type: integer, minimum: 1, maximum: 12, example: 2 }
-
-    CandyPedidoResumenDTO:
-      type: object
-      properties:
-        id_orden:
-          type: integer
-          example: 204
-        id_sucursal_retiro:
-          type: integer
-          example: 1
-        sucursal_nombre:
-          type: string
-          example: "Cine Paradiso Central"
-        fecha_creacion:
-          type: string
-          format: date-time
-          example: "2026-10-26T21:15:00-03:00"
-        estado_efectivo:
-          type: string
-          enum: [PENDIENTE_PAGO, PENDIENTE_RETIRO, ENTREGADO, CANCELADA, EXPIRADA, NO_RETIRADO]
-          example: "PENDIENTE_RETIRO"
-        total:
-          type: number
-          example: 7000.00
-
-    CandyPedidosPaginadosDTO:
-      type: object
-      properties:
-        pagina:
-          type: integer
-          example: 1
-        limite:
-          type: integer
-          example: 10
-        total_registros:
-          type: integer
-          example: 1
-        pedidos:
-          type: array
-          items:
-            $ref: '#/components/schemas/CandyPedidoResumenDTO'
-
-    CandyPedidoDetalleDTO:
-      type: object
-      properties:
-        id_orden: { type: integer, example: 204 }
-        id_sucursal_retiro: { type: integer, example: 1 }
-        fecha_creacion:
-          type: string
-          format: date-time
-          example: "2026-10-26T21:15:00-03:00"
-        vencimiento_bloqueo:
-          type: string
-          format: date-time
-          example: "2026-10-26T21:20:00-03:00"
-        estado_efectivo:
-          type: string
-          enum: [PENDIENTE_PAGO, PENDIENTE_RETIRO, ENTREGADO, CANCELADA, EXPIRADA, NO_RETIRADO]
-          example: "PENDIENTE_RETIRO"
-        total: { type: number, example: 7000.00 }
-        qr_imagen:
-          type: string
-          nullable: true
-          description: Imagen QR en Base64 (solo visible para CLIENTE titular en estado PENDIENTE_RETIRO, nunca para ADMIN)
-          example: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAUA..."
-        productos:
-          type: array
-          items:
-            $ref: '#/components/schemas/ItemProductoOrdenDTO'
-
-    ResolverInventarioRequest:
-      type: object
-      required: [productos, observacion]
-      properties:
-        observacion:
-          type: string
-          example: "Gaseosas cerradas reingresadas a heladera; pochoclos descartados."
-        productos:
-          type: array
-          minItems: 1
-          items:
-            type: object
-            required: [id_producto, cantidad_reingresada, cantidad_descartada]
-            properties:
-              id_producto: { type: integer, example: 1 }
-              cantidad_reingresada: { type: integer, minimum: 0, example: 1 }
-              cantidad_descartada: { type: integer, minimum: 0, example: 1 }
+          minimum: 0
+          example: 2
