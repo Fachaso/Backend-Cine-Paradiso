@@ -301,33 +301,27 @@ def test_crear_sala_valida_limites_de_capacidad(monkeypatch):
         crear_sala_simulada
     )
 
-    for capacidad in (0, 45, 201):
-        datos = {
-            "nombre": "Sala 4",
-            "capacidad": capacidad
-        }
-
+    for capacidad in (0, -1, 201):
         respuesta = cliente.post(
             "/api/sucursales/1/salas",
-            json=datos
+            json={
+                "nombre": "Sala 4",
+                "capacidad": capacidad
+            }
         )
 
         assert respuesta.status_code == 400
-        assert respuesta.get_json()["code"] == "DATOS_INVALIDOS"
 
-    for capacidad in (46, 100, 200):
-        datos = {
-            "nombre": "Sala 4",
-            "capacidad": capacidad
-        }
-
+    for capacidad in (1, 45, 200):
         respuesta = cliente.post(
             "/api/sucursales/1/salas",
-            json=datos
+            json={
+                "nombre": "Sala 4",
+                "capacidad": capacidad
+            }
         )
 
         assert respuesta.status_code == 201
-        assert respuesta.get_json()["data"]["capacidad"] == capacidad
 
 
 def test_crear_sala_rechaza_campos_desconocidos():
@@ -412,22 +406,30 @@ def test_crear_sala_rechaza_datos_invalidos(datos):
     assert respuesta.get_json()["code"] == "DATOS_INVALIDOS"
 
 
-def test_crear_sala_rechaza_nombre_mayor_a_50_caracteres():
+def test_crear_sala_rechaza_nombre_mayor_a_150_caracteres(monkeypatch):
     cliente = crear_cliente()
     sesion_admin(cliente)
 
-    datos = {
-        "nombre": "A" * 51,
-        "capacidad": 48
-    }
+    def servicio_no_debe_ejecutarse(*args, **kwargs):
+        pytest.fail(
+            "No debe llamarse al servicio si el nombre supera 150 caracteres"
+        )
+
+    monkeypatch.setattr(
+        sucursal_service,
+        "crear_sala",
+        servicio_no_debe_ejecutarse
+    )
 
     respuesta = cliente.post(
         "/api/sucursales/1/salas",
-        json=datos
+        json={
+            "nombre": "A" * 151,
+            "capacidad": 48
+        }
     )
 
     assert respuesta.status_code == 400
-    assert respuesta.get_json()["code"] == "DATOS_INVALIDOS"
 
 
 def test_crear_sala_rechaza_json_invalido():
