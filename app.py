@@ -21,11 +21,13 @@ from app.routes.auth_routes import auth_bp
 from app.routes.candybar_routes import candybar_bp
 from app.routes.peliculas_routes import pelicula_bp
 from app.routes.sucursales_routes import sucursales_bp
+from app.routes.perfil_routes import perfil_bp  
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(pelicula_bp)
 app.register_blueprint(candybar_bp)
 app.register_blueprint(sucursales_bp)
+app.register_blueprint(perfil_bp)
 
 # Ruta de chequeo de salud
 @app.get("/api/health")
