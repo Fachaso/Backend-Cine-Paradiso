@@ -109,6 +109,7 @@ def crear_sala_con_asientos(id_sucursal, datos_sala, asientos):
 
     try:
         conexion = get_db_connection()
+        #preguntar si es necesario poner autocommit en true
         conexion.autocommit = True
         cursor = conexion.cursor()
 

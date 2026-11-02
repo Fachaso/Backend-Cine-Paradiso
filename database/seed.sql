@@ -41,3 +41,22 @@ INSERT INTO servicios (id_servicio, nombre, descripcion, tipo, precio) VALUES
 (3, 'Gaseosa Grande 750ml', 'Vaso de gaseosa línea Coca-Cola 750ml', 'BEBIDA', 1800.00),
 (4, 'Estacionamiento', 'Estacionamiento cubierto por 3 horas', 'ESTACIONAMIENTO', 2000.00),
 (5, 'Pase VIP Lounge', 'Acceso a la sala de espera VIP antes de la función', 'VIP', 1500.00);
+
+-- encripto clave de Admin > contrasena: admin123
+UPDATE usuarios 
+SET password_hash = 'scrypt:32768:8:1$7ZT2NgTyz46cOM0Q$88bf35547e993e298006e1e21d49b081799a57d8f415cf650ddbe4f9a9d6608f0cdbb08ee456a311cb058879bef7a1159965719d18fa3c45c699d7a46f3f48d3'
+WHERE email = 'admin@cineparadiso.com';
+
+-- Peliculas
+INSERT INTO peliculas (titulo, sinopsis, poster_url, genero, duracion_min, clasificacion) VALUES
+('Inception', 'Un ladrón roba secretos a través del intercambio de sueños.', 'https://via.placeholder.com/300x450?text=Inception', 'Ciencia Ficción', 148, 'PG-13'),
+('Interstellar', 'Un equipo de exploradores viaja a través de un agujero de gusano.', 'https://via.placeholder.com/300x450?text=Interstellar', 'Ciencia Ficción', 169, 'PG-13'),
+('The Dark Knight', 'Batman enfrenta a un villano caótico que pone a prueba a la ciudad.', 'https://via.placeholder.com/300x450?text=The+Dark+Knight', 'Acción', 152, 'PG-13'),
+('Spider-Man: Across the Spider-Verse', 'Miles Morales es catapultado a través del Multiverso.', 'https://via.placeholder.com/300x450?text=Spider-Man', 'Animación', 140, 'APT'),
+('Avatar: The Way of Water', 'Jake Sully vive con su familia en el planeta Pandora.', 'https://via.placeholder.com/300x450?text=Avatar', 'Aventura', 192, 'PG-13');
+
+-- Funciones
+INSERT INTO funciones (id_pelicula, id_sala, fecha_hora, precio_entrada) VALUES
+(1, 1, '2026-11-05 18:00:00', 4500.00),
+(2, 1, '2026-11-05 21:30:00', 5000.00),
+(3, 2, '2026-11-06 19:00:00', 4500.00);

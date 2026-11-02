@@ -21,6 +21,7 @@ from app.routes.auth_routes import auth_bp
 from app.routes.candybar_routes import candybar_bp
 from app.routes.peliculas_routes import pelicula_bp
 from app.routes.sucursales_routes import sucursales_bp
+from app.routes.funciones_routes import funciones_bp
 from app.routes.perfil_routes import perfil_bp  
 
 app.register_blueprint(auth_bp)
@@ -28,6 +29,7 @@ app.register_blueprint(pelicula_bp)
 app.register_blueprint(candybar_bp)
 app.register_blueprint(sucursales_bp)
 app.register_blueprint(perfil_bp)
+app.register_blueprint(funciones_bp)
 
 # Ruta de chequeo de salud
 @app.get("/api/health")
@@ -47,6 +49,7 @@ def manejar_error(error):
         403: ("ACCESO_DENEGADO", "Acceso prohibido (Permisos insuficientes)"),
         404: ("RECURSO_NO_ENCONTRADO", "Recurso no encontrado"),
         405: ("METODO_NO_PERMITIDO", "Método HTTP no permitido para esta ruta"),
+        409: ("CONFLICTO", "Conflicto con el estado actual del recurso"),
         500: ("ERROR_INTERNO", "Error interno del servidor"),
     }
 
@@ -58,7 +61,7 @@ def manejar_error(error):
         "message": mensaje
     }), estado
 
-for estado in (400, 401, 403, 404, 405, 500):
+for estado in (400, 401, 403, 404, 405, 409, 500):
     app.register_error_handler(estado, manejar_error)
 
 
