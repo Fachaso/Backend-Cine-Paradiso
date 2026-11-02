@@ -67,3 +67,22 @@ def crear_servicio():
     except Exception:
         current_app.logger.exception("Error al crear servicio")
         return respuesta_error("ERROR_INTERNO", "Error interno del servidor", 500)
+
+
+@requiere_admin
+def actualizar_servicio(id_servicio):
+    try:
+        datos = request.get_json(silent=True)
+        servicio, codigo, mensaje = servicio_service.actualizar_servicio(id_servicio, datos)
+
+        if codigo == "SERVICIO_NO_ENCONTRADO":
+            return respuesta_error("SERVICIO_NO_ENCONTRADO", mensaje, 404)
+        if codigo == "DATOS_INVALIDOS":
+            return respuesta_error("DATOS_INVALIDOS", mensaje, 400)
+        if codigo == "SERVICIO_DUPLICADO":
+            return respuesta_error("SERVICIO_DUPLICADO", mensaje, 409)
+
+        return jsonify({"status": "success", "data": servicio}), 200
+    except Exception:
+        current_app.logger.exception("Error al actualizar servicio")
+        return respuesta_error("ERROR_INTERNO", "Error interno del servidor", 500)
