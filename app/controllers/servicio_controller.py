@@ -86,3 +86,19 @@ def actualizar_servicio(id_servicio):
     except Exception:
         current_app.logger.exception("Error al actualizar servicio")
         return respuesta_error("ERROR_INTERNO", "Error interno del servidor", 500)
+
+
+@requiere_admin
+def eliminar_servicio(id_servicio):
+    try:
+        codigo, mensaje = servicio_service.eliminar_servicio(id_servicio)
+
+        if codigo == "SERVICIO_NO_ENCONTRADO":
+            return respuesta_error("SERVICIO_NO_ENCONTRADO", mensaje, 404)
+        if codigo == "SERVICIO_EN_USO":
+            return respuesta_error("SERVICIO_EN_USO", mensaje, 409)
+
+        return "", 204
+    except Exception:
+        current_app.logger.exception("Error al eliminar servicio")
+        return respuesta_error("ERROR_INTERNO", "Error interno del servidor", 500)

@@ -48,3 +48,13 @@ def actualizar_servicio(id_servicio, campos):
     valores = [campos[c] for c in columnas] + [id_servicio]
     sql = f"UPDATE servicios SET {asignaciones} WHERE id_servicio = %s"
     execute_query(sql, tuple(valores), commit=True)
+
+
+def servicio_tiene_compras(id_servicio):
+    sql = "SELECT id_detalle FROM detalle_compra_servicios WHERE id_servicio = %s LIMIT 1"
+    return execute_query(sql, (id_servicio,), fetchone=True) is not None
+
+
+def eliminar_servicio(id_servicio):
+    sql = "DELETE FROM servicios WHERE id_servicio = %s"
+    execute_query(sql, (id_servicio,), commit=True)

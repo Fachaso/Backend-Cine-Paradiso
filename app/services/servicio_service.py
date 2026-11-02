@@ -47,3 +47,14 @@ def actualizar_servicio(id_servicio, datos):
 
     servicio_repository.actualizar_servicio(id_servicio, campos)
     return servicio_repository.obtener_servicio_por_id(id_servicio), None, None
+
+
+def eliminar_servicio(id_servicio):
+    if servicio_repository.obtener_servicio_por_id(id_servicio) is None:
+        return "SERVICIO_NO_ENCONTRADO", "El servicio no existe"
+
+    if servicio_repository.servicio_tiene_compras(id_servicio):
+        return "SERVICIO_EN_USO", "El servicio ya fue usado en compras y no puede eliminarse"
+
+    servicio_repository.eliminar_servicio(id_servicio)
+    return None, None
