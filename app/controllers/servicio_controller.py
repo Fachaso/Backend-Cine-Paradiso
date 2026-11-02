@@ -21,3 +21,31 @@ def listar_servicios():
             "No fue posible obtener los servicios",
             500
         )
+
+
+def obtener_servicio(id_servicio):
+    try:
+        servicio, error = servicio_service.obtener_servicio(id_servicio)
+
+        if error == "SERVICIO_NO_ENCONTRADO":
+            return respuesta_error(
+                "SERVICIO_NO_ENCONTRADO",
+                "El servicio no existe",
+                404
+            )
+
+        return jsonify({
+            "status": "success",
+            "data": servicio
+        }), 200
+
+    except Exception:
+        current_app.logger.exception(
+            "Error al obtener el servicio %s", id_servicio
+        )
+
+        return respuesta_error(
+            "ERROR_INTERNO",
+            "No fue posible obtener el servicio",
+            500
+        )
