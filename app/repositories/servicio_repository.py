@@ -20,3 +20,13 @@ def obtener_servicio_por_id(id_servicio):
         return None
 
     return _convertir_servicio(fila)
+
+
+def existe_servicio_con_nombre(nombre):
+    sql = "SELECT id_servicio FROM servicios WHERE nombre = %s"
+    return execute_query(sql, (nombre,), fetchone=True) is not None
+
+
+def crear_servicio(nombre, descripcion, tipo, precio):
+    sql = "INSERT INTO servicios (nombre, descripcion, tipo, precio) VALUES (%s, %s, %s, %s)"
+    return execute_query(sql, (nombre, descripcion, tipo, precio), commit=True)

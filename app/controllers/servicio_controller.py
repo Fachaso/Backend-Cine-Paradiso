@@ -1,7 +1,8 @@
-from flask import current_app, jsonify
+from flask import current_app, jsonify, request
 
 from app.auth import respuesta_error
 from app.services import servicio_service
+from app.controllers.sucursal_controller import requiere_admin
 
 
 def listar_servicios():
@@ -49,3 +50,20 @@ def obtener_servicio(id_servicio):
             "No fue posible obtener el servicio",
             500
         )
+
+
+@requiere_admin
+def crear_servicio():
+    try:
+        datos = request.get_json(silent=True)
+        servicio, codigo, mensaje = servicio_service.crear_servicio(datos)
+
+        if codigo == "DATOS_INVALIDOS":
+            return respuesta_error("DATOS_INVALIDOS", mensaje, 400)
+        if codigo == "SERVICIO_DUPLICADO":
+            return respuesta_error("SERVICIO_DUPLICADO", mensaje, 409)
+
+        return jsonify({"status": "success", "data": servicio}), 201
+    except Exception:
+        current_app.logger.exception("Error al crear servicio")
+        return respuesta_error("ERROR_INTERNO", "Error interno del servidor", 500)
