@@ -664,11 +664,11 @@ paths:
     post:
       tags:
         - Compras
-      summary: Registrar compra de entradas y servicios adicionales
+      summary: Iniciar una compra pendiente de entradas
       description: >
-        Verifica que los asientos estén libres, calcula el monto total en el servidor,
-        crea la compra, inserta las entradas y servicios, genera el código QR único
-        y envía el comprobante por correo electrónico.
+        Valida la función y los asientos, calcula el monto en el servidor, crea la compra
+        en estado PENDIENTE y bloquea las butacas durante diez minutos. Los servicios
+        se envían al confirmar la compra; esta operación no genera el código QR.
       requestBody:
         required: true
         content:
@@ -677,7 +677,7 @@ paths:
               $ref: '#/components/schemas/CompraCrear'
       responses:
         '201':
-          description: Compra confirmada, entradas emitidas y QR generado
+          description: Compra pendiente creada con asientos reservados
           content:
             application/json:
               schema:
@@ -689,21 +689,22 @@ paths:
                     enum: [success]
                     example: success
                   data:
-                    $ref: '#/components/schemas/CompraDetalle'
+                    $ref: '#/components/schemas/CompraPendiente'
         '400':
           $ref: '#/components/responses/Http400'
         '401':
           $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
         '404':
           $ref: '#/components/responses/Http404'
         '409':
           $ref: '#/components/responses/Http409'
-
   /api/compras/{id_compra}:
     get:
       tags:
         - Compras
-      summary: Consultar detalle completo de una compra (entradas, servicios y QR)
+      summary: Consultar la compra y su detalle según el estado, incluido el QR si ya fue generado
       parameters:
         - $ref: '#/components/parameters/IdCompra'
       responses:
@@ -730,11 +731,11 @@ paths:
     patch:
       tags:
         - Compras
-      summary: Cancelar una compra vigente
+      summary: Confirmar o cancelar una compra
       description: >
-        Cambia estado_qr a CANCELADO (siempre que esté en estado PENDIENTE y dentro
-        del plazo permitido antes de la función) y elimina las filas asociadas en
-        'entradas' para liberar las butacas de la sala.
+        Actualiza el estado de la compra. Para confirmarla se envían los servicios
+        seleccionados; para cancelarla se envía estado_compra CANCELADA.
+        Se permite un máximo de diez unidades por servicio.
       parameters:
         - $ref: '#/components/parameters/IdCompra'
       requestBody:
@@ -742,10 +743,10 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CompraCancelar'
+              $ref: '#/components/schemas/CompraActualizar'
       responses:
         '200':
-          description: Compra cancelada y asientos liberados
+          description: Compra actualizada
           content:
             application/json:
               schema:
@@ -757,7 +758,7 @@ paths:
                     enum: [success]
                     example: success
                   data:
-                    $ref: '#/components/schemas/Compra'
+                    $ref: '#/components/schemas/CompraDetalle'
         '400':
           $ref: '#/components/responses/Http400'
         '401':
@@ -768,6 +769,7 @@ paths:
           $ref: '#/components/responses/Http404'
         '409':
           $ref: '#/components/responses/Http409'
+
 
   /api/codigos-qr/{codigo_qr}:
     patch:
@@ -1457,12 +1459,13 @@ components:
           example: 1
         cantidad:
           type: integer
-          minimum: 1
+          minimum: 0
+          maximum: 10
           example: 1
 
     CompraCrear:
       type: object
-      description: Registra una compra para una función, asignando asientos y servicios opcionales.
+      description: Inicia una compra pendiente para una función y sus asientos.
       required: [id_funcion, asientos_ids]
       properties:
         id_funcion:
@@ -1477,14 +1480,55 @@ components:
           minItems: 1
           uniqueItems: true
           example: [1, 2]
+
+    CompraPendiente:
+      type: object
+      required: [id_compra, estado_compra, monto_total]
+      properties:
+        id_compra:
+          type: integer
+          minimum: 1
+          example: 1
+        estado_compra:
+          type: string
+          enum: [PENDIENTE]
+          example: PENDIENTE
+        monto_total:
+          type: number
+          format: double
+          minimum: 0
+          example: 12500.0
+
+    CompraConfirmar:
+      type: object
+      required: [estado_compra, servicios]
+      properties:
+        estado_compra:
+          type: string
+          enum: [CONFIRMADA]
+          example: CONFIRMADA
         servicios:
           type: array
           items:
             $ref: '#/components/schemas/ServicioEnCompra'
 
+    CompraCancelar:
+      type: object
+      required: [estado_compra]
+      properties:
+        estado_compra:
+          type: string
+          enum: [CANCELADA]
+          example: CANCELADA
+
+    CompraActualizar:
+      oneOf:
+        - $ref: '#/components/schemas/CompraConfirmar'
+        - $ref: '#/components/schemas/CompraCancelar'
+
     Compra:
       type: object
-      required: [id_compra, id_usuario, fecha_compra, monto_total, codigo_qr, estado_qr]
+      required: [id_compra, id_usuario, fecha_compra, monto_total, estado_compra]
       properties:
         id_compra:
           type: integer
@@ -1503,22 +1547,32 @@ components:
           format: double
           minimum: 0
           example: 12500.0
+        estado_compra:
+          type: string
+          enum: [PENDIENTE, CONFIRMADA, CANCELADA, EXPIRADA]
+          example: PENDIENTE
         codigo_qr:
           type: string
+          nullable: true
           example: QR-8F92A1B3
         estado_qr:
           type: string
+          nullable: true
           enum: [PENDIENTE, USADO, CANCELADO]
           example: PENDIENTE
-
     Entrada:
       type: object
       required: [id_entrada, id_compra, id_funcion, id_asiento, precio]
       properties:
         id_entrada:
           type: integer
+          nullable: true
           minimum: 1
           example: 1
+        vence_en:
+          type: string
+          format: date-time
+          nullable: true
         id_compra:
           type: integer
           minimum: 1
@@ -1587,14 +1641,6 @@ components:
           items:
             $ref: '#/components/schemas/DetalleCompraServicio'
 
-    CompraCancelar:
-      type: object
-      required: [estado_qr]
-      properties:
-        estado_qr:
-          type: string
-          enum: [CANCELADO]
-          example: CANCELADO
 
     CodigoQR:
       type: object

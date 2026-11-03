@@ -66,8 +66,10 @@ CREATE TABLE compras (
     id_usuario INT NOT NULL,
     fecha_compra DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     monto_total DECIMAL(10,2) NOT NULL,
-    codigo_qr VARCHAR(100) NOT NULL UNIQUE,
-    estado_qr ENUM('PENDIENTE', 'USADO', 'CANCELADO') NOT NULL DEFAULT 'PENDIENTE',
+    estado_compra ENUM('PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'EXPIRADA')
+        NOT NULL DEFAULT 'PENDIENTE',
+    codigo_qr VARCHAR(100) NULL UNIQUE,
+    estado_qr ENUM('PENDIENTE', 'USADO', 'CANCELADO') NULL,
     FOREIGN KEY (id_usuario) REFERENCES usuarios(id_usuario) ON DELETE CASCADE
 );
 
@@ -105,6 +107,35 @@ CREATE TABLE detalle_compra_servicios (
     FOREIGN KEY (id_servicio) REFERENCES servicios(id_servicio) ON DELETE CASCADE
 );
 
+-- Bloqueo temporal: una fila representa el estado actual
+-- de un asiento para una función.
+CREATE TABLE bloqueos_asientos (
+    id_funcion INT NOT NULL,
+    id_asiento INT NOT NULL,
+    id_compra INT NOT NULL,
+    precio_entrada DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+    vence_en DATETIME NOT NULL,
+    estado ENUM(
+        'ACTIVO',
+        'CONFIRMADO',
+        'EXPIRADO',
+        'LIBERADO'
+    ) NOT NULL DEFAULT 'ACTIVO',
+
+    PRIMARY KEY (id_funcion, id_asiento),
+    INDEX idx_bloqueos_asientos_compra (id_compra),
+
+    FOREIGN KEY (id_funcion)
+        REFERENCES funciones(id_funcion)
+        ON DELETE CASCADE,
+    FOREIGN KEY (id_asiento)
+        REFERENCES asientos(id_asiento)
+        ON DELETE CASCADE,
+    FOREIGN KEY (id_compra)
+        REFERENCES compras(id_compra)
+        ON DELETE CASCADE
+);
+
 -- 11. Reseñas (Requerimiento deseable/opcional)
 CREATE TABLE resenas (
     id_resena INT AUTO_INCREMENT PRIMARY KEY,
@@ -117,3 +148,33 @@ CREATE TABLE resenas (
     FOREIGN KEY (id_pelicula) REFERENCES peliculas(id_pelicula) ON DELETE CASCADE,
     CONSTRAINT uq_usuario_pelicula UNIQUE (id_usuario, id_pelicula)
 );
+
+SET GLOBAL event_scheduler = ON;
+
+DELIMITER $$
+
+CREATE EVENT IF NOT EXISTS expirar_compras_pendientes
+ON SCHEDULE EVERY 1 SECOND
+STARTS CURRENT_TIMESTAMP + INTERVAL 1 SECOND
+ON COMPLETION PRESERVE
+ENABLE
+DO
+BEGIN
+    UPDATE compras AS c
+    SET c.estado_compra = 'EXPIRADA'
+    WHERE c.estado_compra = 'PENDIENTE'
+        AND EXISTS (
+            SELECT 1 FROM bloqueos_asientos AS ba
+            WHERE ba.id_compra = c.id_compra
+                AND ba.estado = 'ACTIVO'
+                AND ba.vence_en <= NOW()
+        );
+
+    UPDATE bloqueos_asientos AS ba
+    JOIN compras AS c ON c.id_compra = ba.id_compra
+    SET ba.estado = 'EXPIRADO'
+    WHERE c.estado_compra = 'EXPIRADA'
+        AND ba.estado = 'ACTIVO';
+END$$
+
+DELIMITER ;

@@ -51,7 +51,7 @@ def validar_datos_funcion(datos):
             if (isinstance(precio_entrada, bool) or
                     not isinstance(precio_entrada, (int, float)) or
                     (isinstance(precio_entrada, float) and
-                     not math.isfinite(precio_entrada)) or precio_entrada < 0):
+                    not math.isfinite(precio_entrada)) or precio_entrada < 0):
                 error = "El precio de entrada debe ser un número mayor o igual a cero"
 
         if error is None:
