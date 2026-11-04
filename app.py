@@ -25,6 +25,7 @@ from app.routes.funciones_routes import funciones_bp
 from app.routes.servicios_routes import servicios_bp
 from app.routes.perfil_routes import perfil_bp
 from app.routes.compras_routes import compras_bp
+from app.routes.control_acceso_routes import control_acceso_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(pelicula_bp)
@@ -34,6 +35,7 @@ app.register_blueprint(perfil_bp)
 app.register_blueprint(funciones_bp)
 app.register_blueprint(servicios_bp)
 app.register_blueprint(compras_bp)
+app.register_blueprint(control_acceso_bp)
 
 # Ruta de chequeo de salud
 @app.get("/api/health")
