@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from flask import current_app, jsonify, request, session
 
-from app.auth import respuesta_error
+from app.utils.auth import respuesta_error
 from app.services import compras_service
 from app.validators.compra_validator import (
     validar_solicitud_compra,

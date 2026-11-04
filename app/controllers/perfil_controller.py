@@ -1,6 +1,6 @@
 from flask import current_app, jsonify, session
 
-from app.auth import respuesta_error
+from app.utils.auth import respuesta_error
 from app.services import perfil_service
 
 
