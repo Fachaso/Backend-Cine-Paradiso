@@ -1,7 +1,7 @@
 from flask import current_app, jsonify, request, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from app.auth import (
+from app.utils.auth import (
     cerrar_sesion,
     datos_publicos_usuario,
     iniciar_sesion,
@@ -41,7 +41,7 @@ def registro():
             commit=True,
         )
 
-        # 4. Devolver datos del usuario creado sin hacer otro SELECT
+        # 4. Devolver datos del usuario creado
         usuario = {"id_usuario": id_nuevo, "nombre": nombre, "email": email, "rol": "CLIENTE"}
         return jsonify({"status": "success", "data": datos_publicos_usuario(usuario)}), 201
 

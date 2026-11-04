@@ -1,6 +1,6 @@
 from flask import current_app, jsonify, request
 
-from app.auth import respuesta_error
+from app.utils.auth import respuesta_error
 from app.services import servicio_service
 from app.controllers.sucursal_controller import requiere_admin
 
