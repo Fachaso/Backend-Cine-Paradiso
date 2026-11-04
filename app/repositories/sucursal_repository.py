@@ -87,7 +87,8 @@ def sala_existe_en_sucursal(id_sucursal, nombre):
         cursor.execute(
             "SELECT id_sala "
             "FROM salas "
-            "WHERE id_sucursal = %s AND nombre = %s",
+            "WHERE id_sucursal = %s "
+            "AND LOWER(nombre) = LOWER(%s)",
             (id_sucursal, nombre)
         )
 
