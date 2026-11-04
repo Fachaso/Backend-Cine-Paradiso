@@ -74,6 +74,6 @@ def validar_solicitud_compra(datos):
 def validar_solicitud_actualizacion_compra(datos):
     if not isinstance(datos, dict):
         return None, "El cuerpo de la solicitud debe ser un objeto JSON"
-    if set(datos) != {"estado_compra"} or datos.get("estado_compra") != "CANCELADA":
-        return None, "Para actualizar una compra solo se admite estado_compra CANCELADA"
-    return {"estado_compra": "CANCELADA"}, None
+    if datos == {"estado_qr": "CANCELADO"} or datos == {"estado_compra": "CANCELADA"}:
+        return {"estado_compra": "CANCELADA"}, None
+    return None, 'Para cancelar solo debe enviar {"estado_qr":"CANCELADO"}'
