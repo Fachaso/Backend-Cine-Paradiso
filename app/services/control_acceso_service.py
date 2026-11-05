@@ -9,7 +9,8 @@ def validar_qr(codigo_qr, id_funcion):
         return None, "QR_NO_VALIDO"
     if not control_acceso_repository.qr_pertenece_a_funcion(codigo_qr, id_funcion):
         return None, "QR_FUNCION_INCORRECTA"
-
+    if not control_acceso_repository.qr_en_horario(codigo_qr, id_funcion):
+        return None, "QR_FUERA_DE_HORARIO"
     control_acceso_repository.marcar_qr_usado(codigo_qr)
     return {"codigo_qr": codigo_qr, "estado_qr": "USADO"}, None
 

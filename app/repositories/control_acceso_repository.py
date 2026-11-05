@@ -24,3 +24,18 @@ def marcar_qr_usado(codigo_qr):
         (codigo_qr,),
         commit=True,
     )
+
+
+def qr_en_horario(codigo_qr, id_funcion):
+    fila = execute_query(
+        "SELECT 1 AS existe FROM compras c "
+        "JOIN entradas e ON e.id_compra = c.id_compra "
+        "JOIN funciones f ON f.id_funcion = e.id_funcion "
+        "JOIN peliculas p ON p.id_pelicula = f.id_pelicula "
+        "WHERE c.codigo_qr = %s AND e.id_funcion = %s "
+        "AND NOW() BETWEEN DATE_SUB(f.fecha_hora, INTERVAL 40 MINUTE) "
+        "AND DATE_ADD(f.fecha_hora, INTERVAL p.duracion_min MINUTE) LIMIT 1",
+        (codigo_qr, id_funcion),
+        fetchone=True,
+    )
+    return fila is not None

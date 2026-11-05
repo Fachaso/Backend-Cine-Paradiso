@@ -7,6 +7,7 @@ ERRORES_QR = {
     "QR_NO_ENCONTRADO": (404, "El código QR no existe"),
     "QR_NO_VALIDO": (409, "El código QR ya fue usado o está cancelado"),
     "QR_FUNCION_INCORRECTA": (409, "El código QR no corresponde a esta función"),
+    "QR_FUERA_DE_HORARIO": (409, "El código QR no es válido en este horario"),
 }
 
 
