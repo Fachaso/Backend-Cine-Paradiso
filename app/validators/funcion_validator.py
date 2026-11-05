@@ -1,6 +1,13 @@
 from datetime import datetime, timedelta, timezone
 import math
 
+def validar_id_funcion(id_funcion):
+    return (
+        not isinstance(id_funcion, bool)
+        and isinstance(id_funcion, int)
+        and id_funcion > 0
+    )
+
 
 def validar_datos_funcion(datos):
     datos_validados = None
@@ -51,7 +58,7 @@ def validar_datos_funcion(datos):
             if (isinstance(precio_entrada, bool) or
                     not isinstance(precio_entrada, (int, float)) or
                     (isinstance(precio_entrada, float) and
-                    not math.isfinite(precio_entrada)) or precio_entrada < 0):
+                     not math.isfinite(precio_entrada)) or precio_entrada < 0):
                 error = "El precio de entrada debe ser un número mayor o igual a cero"
 
         if error is None:

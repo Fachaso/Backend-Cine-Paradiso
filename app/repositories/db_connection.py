@@ -6,10 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def get_db_connection():
-    """
-    Establece y retorna una conexión nativa a la base de datos MySQL.
-    Asegura el uso de cursor de diccionario sin ORM según los requisitos.
-    """
     try:
         connection = mysql.connector.connect(
             host=os.getenv("DB_HOST", "localhost"),
@@ -20,6 +16,7 @@ def get_db_connection():
             charset="utf8mb4"
         )
         return connection
+
     except Error as e:
         print(f"Error de conexión a MySQL: {e}")
         raise e
