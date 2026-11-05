@@ -63,3 +63,15 @@ def validar_datos_funcion(datos):
             }
 
     return datos_validados, error
+
+
+def validar_id_funcion(id_funcion):
+    """
+    Valida que el identificador de la función sea un entero positivo.
+    Retorna (True, None) si es válido o (False, mensaje_error) si no lo es.
+    """
+    if isinstance(id_funcion, bool) or not isinstance(id_funcion, int) or id_funcion <= 0:
+        return False, "El id de función debe ser un entero positivo"
+
+    return True, None
+
