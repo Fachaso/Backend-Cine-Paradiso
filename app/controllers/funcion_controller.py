@@ -136,8 +136,8 @@ def listar_funciones():
 
 
 def obtener_funcion_por_id(id_funcion):
-    es_valido, mensaje = validar_id_funcion(id_funcion)
-    if not es_valido:
+    id_valido, mensaje = validar_id_funcion(id_funcion)
+    if mensaje is not None:
         return respuesta_error(
             400,
             "DATOS_INVALIDOS",
@@ -146,7 +146,7 @@ def obtener_funcion_por_id(id_funcion):
 
     try:
         funcion, error, codigo_http = funciones_service.obtener_funcion_por_id(
-            id_funcion
+            id_valido
         )
 
         if error is not None:
@@ -175,8 +175,8 @@ def obtener_funcion_por_id(id_funcion):
 
 
 def obtener_asientos_por_funcion(id_funcion):
-    es_valido, mensaje = validar_id_funcion(id_funcion)
-    if not es_valido:
+    id_valido, mensaje = validar_id_funcion(id_funcion)
+    if mensaje is not None:
         return respuesta_error(
             400,
             "DATOS_INVALIDOS",
@@ -185,7 +185,7 @@ def obtener_asientos_por_funcion(id_funcion):
 
     try:
         asientos, error, codigo_http = funciones_service.obtener_asientos_por_funcion(
-            id_funcion
+            id_valido
         )
 
         if error is not None:

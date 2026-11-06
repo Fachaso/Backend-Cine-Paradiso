@@ -11,8 +11,6 @@ from app.controllers.funcion_controller import (
 funciones_bp = Blueprint("funciones", __name__, url_prefix="/api")
 
 funciones_bp.route("/funciones", methods=["GET"])(listar_funciones)
-funciones_bp.route("/funciones/<int:id_funcion>", methods=["GET"])(
-    obtener_funcion_por_id
-)
-funciones_bp.route("/funciones/<int:id_funcion>/asientos", methods=["GET"])(obtener_asientos_por_funcion)
+funciones_bp.route("/funciones/<id_funcion>", methods=["GET"])(obtener_funcion_por_id)
+funciones_bp.route("/funciones/<id_funcion>/asientos", methods=["GET"])(obtener_asientos_por_funcion)
 funciones_bp.route("/funciones", methods=["POST"])(crear_funcion)
