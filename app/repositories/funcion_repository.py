@@ -1,4 +1,55 @@
+from mysql.connector import Error
+
 from app.repositories.db_connection import get_db_connection
+
+def existen_entradas_de_funcion(id_funcion):
+    conexion = None
+    cursor = None
+    try:
+        conexion = get_db_connection()
+        cursor = conexion.cursor()
+        cursor.execute(
+            "SELECT 1 FROM entradas WHERE id_funcion = %s LIMIT 1",
+            (id_funcion,)
+        )
+        return cursor.fetchone() is not None
+    finally:
+        if cursor:
+            cursor.close()
+        if conexion and conexion.is_connected():
+            conexion.close()
+
+
+def eliminar_funcion(id_funcion):
+    filas_eliminadas = 0
+    conexion = None
+    cursor = None
+
+    try:
+        conexion = get_db_connection()
+        conexion.autocommit = True
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            "DELETE FROM funciones "
+            "WHERE id_funcion = %s "
+            "AND NOT EXISTS ("
+            "SELECT 1 FROM entradas "
+            "WHERE entradas.id_funcion = funciones.id_funcion"
+            ")",
+            (id_funcion,)
+        )
+
+        filas_eliminadas = cursor.rowcount
+
+    finally:
+        if cursor:
+            cursor.close()
+
+        if conexion and conexion.is_connected():
+            conexion.close()
+
+    return filas_eliminadas
 
 
 def listar_funciones(id_pelicula=None, id_sucursal=None, fecha=None):

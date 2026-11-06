@@ -2,6 +2,7 @@ from flask import Blueprint
 
 from app.controllers.funcion_controller import (
     crear_funcion,
+    eliminar_funcion,
     listar_funciones,
     obtener_asientos_por_funcion,
     obtener_funcion_por_id,
@@ -14,3 +15,4 @@ funciones_bp.route("/funciones", methods=["GET"])(listar_funciones)
 funciones_bp.route("/funciones/<id_funcion>", methods=["GET"])(obtener_funcion_por_id)
 funciones_bp.route("/funciones/<id_funcion>/asientos", methods=["GET"])(obtener_asientos_por_funcion)
 funciones_bp.route("/funciones", methods=["POST"])(crear_funcion)
+funciones_bp.route("/funciones/<int:id_funcion>", methods=["DELETE"])(eliminar_funcion)
