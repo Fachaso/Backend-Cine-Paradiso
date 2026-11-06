@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from app.repositories import asiento_repository
 from app.repositories.funcion_repository import (
     crear_funcion as crear_funcion_repositorio,
     eliminar_funcion as eliminar_funcion_repositorio,
@@ -55,6 +56,17 @@ def obtener_funcion_por_id(id_funcion):
         codigo_http = 404
 
     return funcion, error, codigo_http
+
+
+def obtener_asientos_por_funcion(id_funcion):
+    funcion = obtener_funcion_por_id_repositorio(id_funcion)
+    if funcion is None:
+        return None, "La función no existe", 404
+
+    asientos = asiento_repository.obtener_asientos_por_funcion(
+        id_funcion, funcion["id_sala"]
+    )
+    return asientos, None, 200
 
 
 def crear_funcion(datos):

@@ -124,6 +124,24 @@ def _limpiar_compra_pendiente(cursor, id_compra):
         )
 
 
+def eliminar_compra_pendiente(id_compra):
+    conexion = cursor = None
+    try:
+        conexion = get_db_connection()
+        conexion.autocommit = True
+        cursor = conexion.cursor()
+        cursor.execute(
+            """DELETE FROM compras WHERE id_compra = %s
+            AND estado_compra = 'PENDIENTE'""",
+            (id_compra,)
+        )
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conexion is not None and conexion.is_connected():
+            conexion.close()
+
+
 def _limpiar_confirmacion(cursor, id_compra):
     cursor.execute(
         "SELECT estado_compra FROM compras WHERE id_compra = %s",

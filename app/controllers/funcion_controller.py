@@ -5,10 +5,11 @@ from flask import current_app, jsonify, request
 
 from app.controllers.sucursal_controller import requiere_admin, respuesta_error
 from app.services import funciones_service
-from app.validators.funcion_validator import validar_datos_funcion
-from app.validators.funcion_validator import validar_id_funcion
+from app.validators.funcion_validator import (
+    validar_datos_funcion,
+    validar_id_funcion,
+)
 from mysql.connector import Error
-
 
 ZONA_HORARIA_ARGENTINA = timezone(timedelta(hours=-3))
 
@@ -138,16 +139,17 @@ def listar_funciones():
 
 
 def obtener_funcion_por_id(id_funcion):
-    if isinstance(id_funcion, bool) or not isinstance(id_funcion, int) or id_funcion <= 0:
+    id_valido, mensaje = validar_id_funcion(id_funcion)
+    if mensaje is not None:
         return respuesta_error(
             400,
             "DATOS_INVALIDOS",
-            "El id de función debe ser un entero positivo"
+            mensaje
         )
 
     try:
         funcion, error, codigo_http = funciones_service.obtener_funcion_por_id(
-            id_funcion
+            id_valido
         )
         if error is not None:
             return respuesta_error(codigo_http, "FUNCION_NO_ENCONTRADA", error)
@@ -238,6 +240,45 @@ def eliminar_funcion(id_funcion):
             )
 
     return respuesta, codigo_http
+
+def obtener_asientos_por_funcion(id_funcion):
+    id_valido, mensaje = validar_id_funcion(id_funcion)
+    if mensaje is not None:
+        return respuesta_error(
+            400,
+            "DATOS_INVALIDOS",
+            mensaje
+        )
+
+    try:
+        asientos, error, codigo_http = funciones_service.obtener_asientos_por_funcion(
+            id_valido
+        )
+
+        if error is not None:
+            return respuesta_error(
+                codigo_http,
+                "FUNCION_NO_ENCONTRADA" if codigo_http == 404 else "ERROR_CONSULTA",
+                error
+            )
+
+        return jsonify({
+            "status": "success",
+            "data": asientos
+        }), codigo_http
+
+    except Exception:
+        current_app.logger.exception(
+            "Error al consultar disponibilidad de asientos de la función %s",
+            id_funcion
+        )
+
+        return respuesta_error(
+            500,
+            "ERROR_INTERNO",
+            "No fue posible consultar la disponibilidad de asientos"
+        )
+
 
 @requiere_admin
 def crear_funcion():

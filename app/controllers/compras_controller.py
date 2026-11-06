@@ -65,7 +65,7 @@ def crear_compra():
     if mensaje:
         return respuesta_error("DATOS_INVALIDOS", mensaje, 400)
     try:
-        compra, error, status = compras_service.crear_compra_pendiente(id_usuario, datos)
+        compra, error, status = compras_service.crear_compra(id_usuario, datos)
         if error is not None:
             return _responder_error_compra(error, status)
         return jsonify({"status": "success", "data": _serializar(compra)}), status
@@ -74,26 +74,19 @@ def crear_compra():
         return respuesta_error("ERROR_INTERNO", "No fue posible iniciar la compra", 500)
 
 
-def confirmar_compra(id_compra):
+def actualizar_compra(id_compra):
     id_usuario, respuesta = _obtener_id_cliente()
     if respuesta is not None:
         return respuesta
     if id_compra <= 0:
         return respuesta_error("DATOS_INVALIDOS", "El id de compra debe ser positivo", 400)
-    datos, mensaje = validar_solicitud_actualizacion_compra(
+    _, mensaje = validar_solicitud_actualizacion_compra(
         request.get_json(silent=True)
     )
     if mensaje:
         return respuesta_error("DATOS_INVALIDOS", mensaje, 400)
     try:
-        if datos["estado_compra"] == "CONFIRMADA":
-            _, error, status = compras_service.confirmar_compra(
-                id_compra, id_usuario, datos
-            )
-        else:
-            _, error, status = compras_service.cancelar_compra(
-                id_compra, id_usuario
-            )
+        _, error, status = compras_service.cancelar_compra(id_compra, id_usuario)
         if error is not None:
             return _responder_error_compra(error, status)
         compra, error, status = compras_service.obtener_compra(id_compra, id_usuario)

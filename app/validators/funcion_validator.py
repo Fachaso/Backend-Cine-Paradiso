@@ -70,3 +70,27 @@ def validar_datos_funcion(datos):
             }
 
     return datos_validados, error
+
+
+def validar_id_funcion(id_funcion):
+    """
+    Valida y castea el identificador de función recibido en la ruta.
+    Retorna (id_entero, None) si es válido o (None, mensaje_error) si no lo es.
+    """
+    if isinstance(id_funcion, bool):
+        return None, "El id de función debe ser un entero positivo"
+
+    if isinstance(id_funcion, int):
+        if id_funcion <= 0:
+            return None, "El id de función debe ser un entero positivo"
+        return id_funcion, None
+
+    if not isinstance(id_funcion, str):
+        return None, "El id de función debe ser un entero positivo"
+
+    texto = id_funcion.strip()
+    if not texto.isdigit() or int(texto) <= 0:
+        return None, "El id de función debe ser un entero positivo"
+
+    return int(texto), None
+
