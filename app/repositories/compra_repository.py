@@ -582,7 +582,7 @@ def obtener_datos_pelicula_compra(id_compra):
         conexion.autocommit = True
         cursor = conexion.cursor(dictionary=True)
         cursor.execute(
-            """SELECT p.titulo AS titulo_pelicula, p.poster_url
+            """SELECT p.titulo AS titulo_pelicula, p.poster_url, f.fecha_hora
             FROM entradas e
             JOIN funciones f ON f.id_funcion = e.id_funcion
             JOIN peliculas p ON p.id_pelicula = f.id_pelicula

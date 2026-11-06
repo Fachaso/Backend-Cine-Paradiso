@@ -14,6 +14,14 @@ def _texto(valor):
     return "-" if valor is None else str(valor)
 
 
+def _formatear_fecha_hora(valor):
+    if valor is None:
+        return None
+    if hasattr(valor, "strftime"):
+        return valor.strftime("%d/%m/%Y · %H:%M hs")
+    return str(valor)
+
+
 def _linea_entrada(entrada):
     fila = _texto(entrada.get("fila"))
     numero = _texto(entrada.get("numero"))
@@ -37,6 +45,7 @@ def _armar_contenido(datos_compra):
     pelicula = datos_compra.get("pelicula") or {}
 
     titulo_pelicula = pelicula.get("titulo_pelicula")
+    fecha_hora = _formatear_fecha_hora(pelicula.get("fecha_hora"))
     poster_url = (pelicula.get("poster_url") or "").strip()
     if not poster_url.startswith("https://"):
         poster_url = ""
@@ -55,6 +64,8 @@ def _armar_contenido(datos_compra):
     texto = ["Gracias por tu compra en Cine Paradiso."]
     if titulo_pelicula:
         texto.append(f"Película: {titulo_pelicula}")
+    if fecha_hora:
+        texto.append(f"Fecha y hora: {fecha_hora}")
 
     texto += [
         "",
@@ -139,6 +150,27 @@ def _armar_contenido(datos_compra):
             f'{escape(titulo_pelicula)}</h2>'
         )
 
+    funcion_html = ""
+    if fecha_hora:
+        funcion_html = f"""
+        <table role="presentation" width="100%" cellspacing="0"
+            cellpadding="0" border="0" bgcolor="#292929"
+            style="background-color:#292929;border-left:3px solid #e50920;
+                    margin:0 0 22px">
+        <tr>
+            <td style="padding:13px 15px">
+            <p style="margin:0 0 5px;color:#ffaaa1;font-size:11px;
+                        font-weight:bold;letter-spacing:1px">
+                FECHA Y HORA DE LA FUNCIÓN
+            </p>
+            <p style="margin:0;color:#f2f2f2;font-size:16px;font-weight:bold">
+                {escape(fecha_hora)}
+            </p>
+            </td>
+        </tr>
+        </table>
+        """
+
     html = f"""
     <!doctype html>
     <html lang="es">
@@ -194,6 +226,7 @@ def _armar_contenido(datos_compra):
                 <td style="padding:14px 28px 4px">
                     {pelicula_html}
                     {titulo_html}
+                    {funcion_html}
                 </td>
                 </tr>
 
