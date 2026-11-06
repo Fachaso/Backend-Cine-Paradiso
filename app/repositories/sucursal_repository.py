@@ -103,11 +103,9 @@ def sala_existe_en_sucursal(id_sucursal, nombre):
 
 
 def crear_sala_con_asientos(id_sucursal, datos_sala, asientos):
-    """Crea una sala y registra sus asientos."""
 
     conexion = None
     cursor = None
-
     try:
         conexion = get_db_connection()
         #preguntar si es necesario poner autocommit en true
@@ -151,3 +149,63 @@ def crear_sala_con_asientos(id_sucursal, datos_sala, asientos):
 
         if conexion and conexion.is_connected():
             conexion.close()
+
+
+def existen_funciones_de_sala(id_sala):
+    conexion = None
+    cursor = None
+    existe = False
+    try:
+        conexion = get_db_connection()
+        cursor = conexion.cursor()
+        cursor.execute("SELECT 1 FROM funciones WHERE id_sala = %s LIMIT 1", (id_sala,))
+        existe = cursor.fetchone() is not None
+    finally:
+        if cursor:
+            cursor.close()
+        if conexion and conexion.is_connected():
+            conexion.close()
+    return existe
+
+
+def existen_entradas_de_sala(id_sala):
+    conexion = None
+    cursor = None
+    existe = False
+    try:
+        conexion = get_db_connection()
+        cursor = conexion.cursor()
+        cursor.execute(
+            "SELECT 1 FROM entradas WHERE id_asiento IN "
+            "(SELECT id_asiento FROM asientos WHERE id_sala = %s) LIMIT 1",
+            (id_sala,)
+        )
+        existe = cursor.fetchone() is not None
+    finally:
+        if cursor:
+            cursor.close()
+        if conexion and conexion.is_connected():
+            conexion.close()
+    return existe
+
+
+def eliminar_sala(id_sucursal, id_sala):
+    conexion = None
+    cursor = None
+    filas_eliminadas = 0
+    try:
+        conexion = get_db_connection()
+        conexion.autocommit = True
+        cursor = conexion.cursor()
+        cursor.execute(
+    "DELETE FROM salas WHERE id_sala = %s AND id_sucursal = %s",
+    
+    (id_sala, id_sucursal)
+        )
+        filas_eliminadas = cursor.rowcount
+    finally:
+        if cursor:
+            cursor.close()
+        if conexion and conexion.is_connected():
+            conexion.close()
+    return filas_eliminadas
