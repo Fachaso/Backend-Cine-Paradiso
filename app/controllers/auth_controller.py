@@ -50,22 +50,22 @@ def login():
         return jsonify({"status": "success", "data": data}), status_code
 
     except Exception:
-        current_app.logger.exception("Error al iniciar sesi贸n")
+        current_app.logger.exception("Error al iniciar sesion")
         return respuesta_error("ERROR_INTERNO", "Error interno del servidor", 500)
 
 
 def logout():
     if not session.get("id_usuario"):
-        return respuesta_error("NO_AUTENTICADO", "No hay una sesi贸n activa", 401)
+        return respuesta_error("NO_AUTENTICADO", "No hay una sesion activa", 401)
 
     auth_service.cerrar_sesion_activa()
-    return jsonify({"status": "success", "data": {"message": "Sesi贸n cerrada"}}), 200
+    return jsonify({"status": "success", "data": {"message": "Sesion cerrada"}}), 200
 
 
 def me():
     id_usuario = session.get("id_usuario")
     if not id_usuario:
-        return respuesta_error("NO_AUTENTICADO", "No hay una sesi贸n activa", 401)
+        return respuesta_error("NO_AUTENTICADO", "No hay una sesion activa", 401)
 
     try:
         data, code, msg, status_code = auth_service.obtener_usuario_actual(id_usuario)
