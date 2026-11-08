@@ -9,6 +9,19 @@ def validar_id_sucursal(id_sucursal):
 
     return True, None
 
+def validar_id_sala(id_sala):
+    es_valido = (
+        not isinstance(id_sala, bool)
+        and isinstance(id_sala, int)
+        and id_sala > 0
+    )
+
+    mensaje = None
+
+    if not es_valido:
+        mensaje = "El id de sala debe ser un entero positivo"
+
+    return es_valido, mensaje
 
 def validar_datos_sala(datos):
     if not isinstance(datos, dict):

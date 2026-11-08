@@ -3,6 +3,8 @@ from datetime import timedelta
 from app.repositories import asiento_repository
 from app.repositories.funcion_repository import (
     crear_funcion as crear_funcion_repositorio,
+    eliminar_funcion as eliminar_funcion_repositorio,
+    existen_entradas_de_funcion,
     listar_funciones as listar_funciones_repositorio,
     obtener_funcion_por_id as obtener_funcion_por_id_repositorio,
     obtener_funciones_de_sala,
@@ -10,6 +12,33 @@ from app.repositories.funcion_repository import (
     obtener_sala_por_id,
 )
 
+
+def eliminar_funcion(id_funcion):
+    resultado = None
+    error = None
+    codigo_http = 200
+
+    funcion = obtener_funcion_por_id_repositorio(id_funcion)
+
+    if funcion is None:
+        error = "La función no existe"
+        codigo_http = 404
+
+    elif existen_entradas_de_funcion(id_funcion):
+        error = "No se puede eliminar la función porque tiene entradas asociadas"
+        codigo_http = 409
+
+    else:
+        filas_eliminadas = eliminar_funcion_repositorio(id_funcion)
+
+        if filas_eliminadas == 1:
+            resultado = {"id_funcion": id_funcion}
+
+        else:
+            error = "No fue posible eliminar la función"
+            codigo_http = 500
+
+    return resultado, error, codigo_http
 
 def listar_funciones(id_pelicula=None, id_sucursal=None, fecha=None):
     funciones = listar_funciones_repositorio(id_pelicula, id_sucursal, fecha)

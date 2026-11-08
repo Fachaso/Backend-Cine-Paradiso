@@ -8,6 +8,7 @@ from app.services import sucursal_service
 from app.validators.sucursal_validator import (
     obtener_rol_de_sesion,
     validar_datos_sala,
+    validar_id_sala,
     validar_id_sucursal,
 )
 
@@ -179,3 +180,69 @@ def crear_sala(id_sucursal):
             "ERROR_INTERNO",
             "No fue posible crear la sala"
         )
+
+
+@requiere_admin
+def eliminar_sala(id_sucursal, id_sala):
+    respuesta = None
+    codigo_http = 200
+
+    es_valido_sucursal, mensaje_sucursal = validar_id_sucursal(id_sucursal)
+    es_valido_sala, mensaje_sala = validar_id_sala(id_sala)
+
+    if not es_valido_sucursal:
+        respuesta, codigo_http = respuesta_error(
+            400, "ID_INVALIDO", mensaje_sucursal
+        )
+
+    elif not es_valido_sala:
+        respuesta, codigo_http = respuesta_error(
+            400, "ID_INVALIDO", mensaje_sala
+        )
+
+    else:
+        try:
+            resultado, error, mensaje, codigo_http = sucursal_service.eliminar_sala(
+                id_sucursal, id_sala
+            )
+
+            if error is not None:
+                respuesta, codigo_http = respuesta_error(
+                    codigo_http, error, mensaje
+                )
+            else:
+                respuesta = jsonify({
+                    "status": "success",
+                    "data": resultado,
+                    "message": "Sala eliminada correctamente"
+                })
+
+        except Error as error:
+            current_app.logger.exception(
+                "Error de MySQL al eliminar la sala %s", id_sala
+            )
+
+            if error.errno == 1451:
+                respuesta, codigo_http = respuesta_error(
+                    409,
+                    "SALA_CON_DEPENDENCIAS",
+                    "No se puede eliminar la sala porque tiene recursos asociados"
+                )
+            else:
+                respuesta, codigo_http = respuesta_error(
+                    500,
+                    "ERROR_INTERNO",
+                    "No fue posible eliminar la sala"
+                )
+
+        except Exception:
+            current_app.logger.exception(
+                "Error al eliminar la sala %s", id_sala
+            )
+            respuesta, codigo_http = respuesta_error(
+                500,
+                "ERROR_INTERNO",
+                "No fue posible eliminar la sala"
+            )
+
+    return respuesta, codigo_http
