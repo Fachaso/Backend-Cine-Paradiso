@@ -2,12 +2,12 @@ from flask import Response, current_app, jsonify, request
 
 from app.controllers.sucursal_controller import requiere_admin
 from app.services.estadisticas_service import (
-    generar_reporte_pdf_service,
     obtener_cancelaciones_service,
     obtener_franjas_horarias_service,
     obtener_ocupacion_service,
     obtener_ventas_por_genero_service,
 )
+from app.services.reporte_pdf_service import generar_reporte_pdf_service
 
 
 @requiere_admin
