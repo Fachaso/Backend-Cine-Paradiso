@@ -514,6 +514,63 @@ def cancelar_compra(id_compra, id_usuario):
             conexion.close()
 
 
+def validar_qr(codigo_qr, id_funcion):
+    conexion = cursor = None
+    try:
+        conexion = get_db_connection()
+        conexion.autocommit = True
+        cursor = conexion.cursor(dictionary=True)
+
+        cursor.execute(
+            """SELECT id_compra, estado_compra, estado_qr
+            FROM compras WHERE codigo_qr = %s""",
+            (codigo_qr,)
+        )
+        compra = cursor.fetchone()
+
+        if compra is None:
+            return None, {"code": "QR_NO_ENCONTRADO", "message": "El código QR no existe"}, 404
+
+        if compra["estado_compra"] != "CONFIRMADA":
+            return None, {"code": "COMPRA_NO_CONFIRMADA", "message": "La compra no está confirmada"}, 409
+
+        if compra["estado_qr"] != "PENDIENTE":
+            return None, {"code": "QR_YA_USADO", "message": "Este código QR ya fue usado o cancelado"}, 409
+
+        cursor.execute(
+            """SELECT e.id_entrada, e.id_asiento, a.fila, a.numero
+            FROM entradas e
+            JOIN asientos a ON a.id_asiento = e.id_asiento
+            WHERE e.id_compra = %s AND e.id_funcion = %s""",
+            (compra["id_compra"], id_funcion)
+        )
+        entradas = cursor.fetchall()
+
+        if not entradas:
+            return None, {
+                "code": "QR_NO_CORRESPONDE_FUNCION",
+                "message": "Este código QR no corresponde a la función indicada"
+            }, 409
+
+        cursor.execute(
+            """UPDATE compras SET estado_qr = 'USADO'
+            WHERE id_compra = %s AND estado_qr = 'PENDIENTE'""",
+            (compra["id_compra"],)
+        )
+
+        return {
+            "id_compra": compra["id_compra"],
+            "codigo_qr": codigo_qr,
+            "estado_qr": "USADO",
+            "entradas": entradas
+        }, None, 200
+
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conexion is not None and conexion.is_connected():
+            conexion.close()
+
 def obtener_compra(id_compra, id_usuario):
     conexion = cursor = None
     try:
