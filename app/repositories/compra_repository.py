@@ -3,6 +3,7 @@ from uuid import uuid4
 from decimal import Decimal
 from mysql.connector import IntegrityError
 
+PLAZO_CANCELACION_MINUTOS = 60
 
 def crear_orden_candybar(
     id_usuario,
@@ -340,7 +341,7 @@ def confirmar_compra(id_compra, id_usuario, datos):
                     VALUES (%s, %s, %s, %s)""",
                     [
                         (id_compra, s["id_servicio"], s["cantidad"],
-                         precios[s["id_servicio"]])
+                        precios[s["id_servicio"]])
                         for s in servicios
                     ]
                 )
@@ -464,16 +465,22 @@ def cancelar_compra(id_compra, id_usuario):
             )
 
         cursor.execute(
-            """SELECT COUNT(*) AS iniciadas
+            """SELECT COUNT(*) AS cantidad_entradas,
+                SUM(f.fecha_hora <= DATE_ADD(NOW(), INTERVAL %s MINUTE))
+                    AS dentro_del_plazo
             FROM entradas e
             JOIN funciones f ON f.id_funcion = e.id_funcion
-            WHERE e.id_compra = %s AND f.fecha_hora <= NOW()""",
-            (id_compra,)
+            WHERE e.id_compra = %s""",
+            (PLAZO_CANCELACION_MINUTOS, id_compra),
         )
-        if cursor.fetchone()["iniciadas"] > 0:
+        funciones = cursor.fetchone()
+        if (
+            funciones["cantidad_entradas"] == 0
+            or funciones["dentro_del_plazo"] > 0
+        ):
             return _error_compra(
                 "COMPRA_NO_CANCELABLE",
-                "No se puede cancelar después del inicio de la función",
+                f"La compra debe cancelarse al menos {PLAZO_CANCELACION_MINUTOS} minutos antes de la función",
                 409
             )
 
@@ -569,6 +576,29 @@ def obtener_compra(id_compra, id_usuario):
             compra["entradas"] = cursor.fetchall()
             compra["servicios"] = []
         return compra, None, 200
+    finally:
+        if cursor is not None:
+            cursor.close()
+        if conexion is not None and conexion.is_connected():
+            conexion.close()
+
+def obtener_datos_pelicula_compra(id_compra):
+    conexion = cursor = None
+    try:
+        conexion = get_db_connection()
+        conexion.autocommit = True
+        cursor = conexion.cursor(dictionary=True)
+        cursor.execute(
+            """SELECT p.titulo AS titulo_pelicula, p.poster_url, f.fecha_hora
+            FROM entradas e
+            JOIN funciones f ON f.id_funcion = e.id_funcion
+            JOIN peliculas p ON p.id_pelicula = f.id_pelicula
+            WHERE e.id_compra = %s
+            ORDER BY e.id_entrada
+            LIMIT 1""",
+            (id_compra,)
+        )
+        return cursor.fetchone()
     finally:
         if cursor is not None:
             cursor.close()

@@ -48,7 +48,7 @@ CREATE TABLE funciones (
     fecha_hora DATETIME NOT NULL,
     precio_entrada DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (id_pelicula) REFERENCES peliculas(id_pelicula) ON DELETE CASCADE,
-    FOREIGN KEY (id_sala) REFERENCES salas(id_sala) ON DELETE CASCADE
+    FOREIGN KEY (id_sala) REFERENCES salas(id_sala) ON DELETE RESTRICT
 );
 
 -- 6. Usuarios y Roles (ADMIN y CLIENTE)
@@ -82,8 +82,8 @@ CREATE TABLE entradas (
     id_asiento INT NOT NULL,
     precio DECIMAL(10,2) NOT NULL,
     FOREIGN KEY (id_compra) REFERENCES compras(id_compra) ON DELETE CASCADE,
-    FOREIGN KEY (id_funcion) REFERENCES funciones(id_funcion) ON DELETE CASCADE,
-    FOREIGN KEY (id_asiento) REFERENCES asientos(id_asiento) ON DELETE CASCADE,
+    FOREIGN KEY (id_funcion) REFERENCES funciones(id_funcion) ON DELETE RESTRICT,
+    FOREIGN KEY (id_asiento) REFERENCES asientos(id_asiento) ON DELETE RESTRICT,
     CONSTRAINT uq_funcion_asiento UNIQUE (id_funcion, id_asiento)
 );
 
