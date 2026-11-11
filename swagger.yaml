@@ -358,6 +358,60 @@ paths:
         '409':
           $ref: '#/components/responses/Http409'
 
+  /api/sucursales/{id_sucursal}/salas/{id_sala}:
+    delete:
+      tags:
+        - Sucursales y salas
+      summary: Eliminar una sala
+      description: >
+        Solo ADMIN. La sala debe pertenecer a la sucursal indicada y no se elimina
+        mientras tenga funciones o entradas asociadas. Un ID inválido produce 400;
+        una sucursal o sala inexistente o una sala de otra sucursal produce 404;
+        las funciones, entradas u otras dependencias producen 409.
+      parameters:
+        - $ref: '#/components/parameters/IdSucursal'
+        - $ref: '#/components/parameters/IdSala'
+      responses:
+        '200':
+          description: Sala eliminada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data, message]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: object
+                    required: [id_sucursal, id_sala]
+                    properties:
+                      id_sucursal:
+                        type: integer
+                        minimum: 1
+                        example: 1
+                      id_sala:
+                        type: integer
+                        minimum: 1
+                        example: 2
+                  message:
+                    type: string
+                    example: Sala eliminada correctamente
+        '400':
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
+        '500':
+          $ref: '#/components/responses/Http500'
+
   /api/funciones:
     get:
       tags:
@@ -467,6 +521,53 @@ paths:
                     $ref: '#/components/schemas/Funcion'
         '404':
           $ref: '#/components/responses/Http404'
+
+    delete:
+      tags:
+        - Funciones
+      summary: Eliminar una función
+      description: >
+        Solo ADMIN. No se elimina una función con entradas asociadas. Un ID
+        inválido produce 400, una función inexistente produce 404 y las entradas
+        u otras dependencias producen 409.
+      parameters:
+        - $ref: '#/components/parameters/IdFuncion'
+      responses:
+        '200':
+          description: Función eliminada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data, message]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: object
+                    required: [id_funcion]
+                    properties:
+                      id_funcion:
+                        type: integer
+                        minimum: 1
+                        example: 1
+                  message:
+                    type: string
+                    example: Función eliminada correctamente
+        '400':
+          $ref: '#/components/responses/Http400'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
+        '500':
+          $ref: '#/components/responses/Http500'
 
   /api/funciones/{id_funcion}/asientos:
     get:
@@ -1000,6 +1101,13 @@ components:
         minimum: 1
     IdSucursal:
       name: id_sucursal
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    IdSala:
+      name: id_sala
       in: path
       required: true
       schema:
