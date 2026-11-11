@@ -44,12 +44,22 @@ def validar_datos_funcion(datos):
             else:
                 try:
                     fecha_con_zona = datetime.fromisoformat(fecha_hora)
+
                     if fecha_con_zona.tzinfo is None:
                         error = "La fecha y hora debe incluir zona horaria"
                     else:
                         zona_argentina = timezone(timedelta(hours=-3))
-                        fecha_argentina = fecha_con_zona.astimezone(zona_argentina)
-                        fecha_argentina = fecha_argentina.replace(tzinfo=None)
+                        fecha_argentina_con_zona = fecha_con_zona.astimezone(
+                            zona_argentina
+                        )
+
+                        if fecha_argentina_con_zona <= datetime.now(zona_argentina):
+                            error = "La fecha y hora de la función debe ser futura"
+                        else:
+                            fecha_argentina = fecha_argentina_con_zona.replace(
+                                tzinfo=None
+                            )
+
                 except ValueError:
                     error = "La fecha y hora debe tener formato ISO 8601 válido"
 
