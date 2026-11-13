@@ -14,17 +14,25 @@ def obtener_asientos_por_funcion(id_funcion, id_sala):
             "SELECT a.id_asiento, a.fila, a.numero, "
             "CASE "
             "    WHEN e.id_asiento IS NOT NULL THEN 'OCUPADO' "
+            "    WHEN b.id_asiento IS NOT NULL THEN 'OCUPADO' "
             "    ELSE 'DISPONIBLE' "
             "END AS estado "
             "FROM asientos a "
             "LEFT JOIN entradas e "
-            "    ON a.id_asiento = e.id_asiento AND e.id_funcion = %s "
+            "    ON a.id_asiento = e.id_asiento "
+            "    AND e.id_funcion = %s "
+            "LEFT JOIN bloqueos_asientos b "
+            "    ON a.id_asiento = b.id_asiento "
+            "    AND b.id_funcion = %s "
+            "    AND b.estado = 'ACTIVO' "
+            "    AND b.vence_en > NOW() "
             "WHERE a.id_sala = %s "
             "ORDER BY a.fila ASC, a.numero ASC"
         )
 
-        cursor.execute(consulta, (id_funcion, id_sala))
+        cursor.execute(consulta, (id_funcion, id_funcion, id_sala))
         asientos = cursor.fetchall()
+
     finally:
         if cursor:
             cursor.close()
