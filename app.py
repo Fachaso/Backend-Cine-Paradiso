@@ -18,7 +18,6 @@ CORS(app)
 
 # Registro de Blueprints
 from app.routes.auth_routes import auth_bp
-from app.routes.candybar_routes import candybar_bp
 from app.routes.peliculas_routes import pelicula_bp
 from app.routes.sucursales_routes import sucursales_bp
 from app.routes.funciones_routes import funciones_bp
@@ -29,7 +28,6 @@ from app.routes.estadisticas_routes import estadisticas_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(pelicula_bp)
-app.register_blueprint(candybar_bp)
 app.register_blueprint(sucursales_bp)
 app.register_blueprint(perfil_bp)
 app.register_blueprint(funciones_bp)
