@@ -30,3 +30,15 @@ def validar_qr_ingreso(codigo_qr):
     except Exception:
         current_app.logger.exception("Error al validar el código QR")
         return respuesta_error(500, "ERROR_INTERNO", "No fue posible validar el código QR")
+
+
+def consultar_qr(codigo_qr):
+    try:
+        dato, error = control_acceso_service.consultar_qr(codigo_qr)
+        if error is not None:
+            estado_http, mensaje = ERRORES_QR[error]
+            return respuesta_error(estado_http, error, mensaje)
+        return jsonify({"status": "success", "data": dato}), 200
+    except Exception:
+        current_app.logger.exception("Error al consultar el código QR")
+        return respuesta_error(500, "ERROR_INTERNO", "No fue posible consultar el código QR")
