@@ -437,6 +437,13 @@ paths:
           schema:
             type: string
             format: date
+        - name: vigentes
+          in: query
+          required: false
+          description: Con true, excluye las funciones que ya finalizaron.
+          schema:
+            type: string
+            enum: ['true', 'false']
       responses:
         '200':
           description: Funciones disponibles con datos de película, sala y sucursal
