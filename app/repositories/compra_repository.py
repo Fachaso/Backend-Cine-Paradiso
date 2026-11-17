@@ -214,16 +214,24 @@ def confirmar_compra(id_compra, id_usuario, datos):
         if ids_servicios:
             marcas = ", ".join(["%s"] * len(ids_servicios))
             cursor.execute(
-                f"SELECT id_servicio, precio FROM servicios WHERE id_servicio IN ({marcas})",
+                f"SELECT id_servicio, precio, tipo FROM servicios WHERE id_servicio IN ({marcas})",
                 tuple(ids_servicios)
             )
-            precios = {s["id_servicio"]: s["precio"] for s in cursor.fetchall()}
+            catalogo = {s["id_servicio"]: s for s in cursor.fetchall()}
+            precios = {i: s["precio"] for i, s in catalogo.items()}
             for servicio in servicios:
                 if servicio["id_servicio"] not in precios:
                     return _error_compra(
                         "SERVICIO_NO_ENCONTRADO",
                         f"El servicio {servicio['id_servicio']} no existe",
                         404
+                    )
+                if (catalogo[servicio["id_servicio"]]["tipo"] == "VIP"
+                        and servicio["cantidad"] > len(asientos)):
+                    return _error_compra(
+                        "SERVICIO_CANTIDAD_INVALIDA",
+                        "El pase VIP no puede superar la cantidad de entradas",
+                        400
                     )
 
         total = sum((a["precio_entrada"] for a in asientos), Decimal("0.00"))
