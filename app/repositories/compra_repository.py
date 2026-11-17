@@ -69,12 +69,19 @@ def crear_compra_pendiente(id_usuario, datos):
         conexion.autocommit = True
         cursor = conexion.cursor(dictionary=True)
         cursor.execute(
-            "SELECT id_sala, precio_entrada FROM funciones WHERE id_funcion = %s",
+            """SELECT f.id_sala, f.precio_entrada,
+                DATE_ADD(f.fecha_hora, INTERVAL p.duracion_min MINUTE) <= NOW()
+                    AS finalizada
+            FROM funciones f
+            JOIN peliculas p ON p.id_pelicula = f.id_pelicula
+            WHERE f.id_funcion = %s""",
             (datos["id_funcion"],)
         )
         funcion = cursor.fetchone()
         if funcion is None:
             return _error_compra("FUNCION_NO_ENCONTRADA", "La función no existe", 404)
+        if funcion["finalizada"]:
+            return _error_compra("FUNCION_FINALIZADA", "La función ya finalizó", 409)
 
         ids = datos["asientos_ids"]
         marcas = ", ".join(["%s"] * len(ids))
