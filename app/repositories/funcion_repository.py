@@ -52,7 +52,7 @@ def eliminar_funcion(id_funcion):
     return filas_eliminadas
 
 
-def listar_funciones(id_pelicula=None, id_sucursal=None, fecha=None):
+def listar_funciones(id_pelicula=None, id_sucursal=None, fecha=None, solo_vigentes=False):
     funciones = None
     conexion = None
     cursor = None
@@ -72,6 +72,10 @@ def listar_funciones(id_pelicula=None, id_sucursal=None, fecha=None):
         if fecha is not None:
             condiciones.append("DATE(f.fecha_hora) = %s")
             parametros.append(fecha)
+        if solo_vigentes:
+            condiciones.append(
+                "DATE_ADD(f.fecha_hora, INTERVAL p.duracion_min MINUTE) > NOW()"
+            )
 
         consulta = (
             "SELECT f.id_funcion, f.id_pelicula, p.titulo AS titulo_pelicula, "

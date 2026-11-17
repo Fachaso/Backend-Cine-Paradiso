@@ -32,7 +32,7 @@ def serializar_funcion(funcion):
 
 def listar_funciones():
     parametros = request.args
-    filtros_permitidos = ("id_pelicula", "id_sucursal", "fecha")
+    filtros_permitidos = ("id_pelicula", "id_sucursal", "fecha", "vigentes")
 
     for nombre in parametros:
         if nombre not in filtros_permitidos:
@@ -105,9 +105,20 @@ def listar_funciones():
                 "La fecha debe tener formato YYYY-MM-DD válido"
             )
 
+    solo_vigentes = False
+    valor_vigentes = parametros.get("vigentes")
+    if valor_vigentes is not None:
+        if valor_vigentes not in ("true", "false"):
+            return respuesta_error(
+                400,
+                "DATOS_INVALIDOS",
+                "El filtro vigentes debe ser true o false"
+            )
+        solo_vigentes = valor_vigentes == "true"
+
     try:
         funciones, error, codigo_http = funciones_service.listar_funciones(
-            id_pelicula, id_sucursal, fecha
+            id_pelicula, id_sucursal, fecha, solo_vigentes
         )
 
         if error is not None:
