@@ -857,7 +857,9 @@ paths:
       summary: Validar y consumir código QR al ingresar a la sala
       description: >
         Solo ADMIN. Verifica que el QR corresponda a la función indicada y que su
-        estado_qr sea PENDIENTE antes de marcarlo como USADO.
+        estado_qr sea PENDIENTE antes de marcarlo como USADO. Además, solo se
+        admite entre 40 minutos antes del inicio de la función y el fin de la
+        película.
       parameters:
         - $ref: '#/components/parameters/CodigoQR'
       requestBody:
