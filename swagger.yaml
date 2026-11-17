@@ -102,6 +102,87 @@ paths:
         '401':
           $ref: '#/components/responses/Http401'
 
+  /api/recuperar-password:
+    post:
+      tags:
+        - Autenticación
+      summary: Solicitar enlace de recuperación de contraseña
+      description: >
+        Acceso público. Verifica si el correo electrónico está registrado y, en caso
+        afirmativo, envía un enlace temporal con token firmado (válido por 30 minutos)
+        al correo del usuario. Por seguridad devuelve siempre una respuesta genérica.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SolicitudRecuperacion'
+      responses:
+        '200':
+          description: Solicitud procesada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message:
+                        type: string
+                        example: Si el correo está registrado, te enviamos un enlace para restablecer tu contraseña.
+        '400':
+          $ref: '#/components/responses/Http400'
+        '500':
+          $ref: '#/components/responses/Http500'
+
+  /api/restablecer-password:
+    post:
+      tags:
+        - Autenticación
+      summary: Restablecer contraseña mediante token temporal
+      description: >
+        Acceso público. Valida la firma y vigencia del token recibido por correo
+        y actualiza el hash de la contraseña del usuario en la base de datos.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RestablecimientoPassword'
+      responses:
+        '200':
+          description: Contraseña actualizada correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    type: object
+                    required: [message]
+                    properties:
+                      message:
+                        type: string
+                        example: Contraseña actualizada correctamente. Ya podés iniciar sesión.
+        '400':
+          $ref: '#/components/responses/Http400'
+        '500':
+          $ref: '#/components/responses/Http500'
+
   /api/perfil:
     get:
       tags:
@@ -1228,6 +1309,34 @@ components:
           type: string
           format: password
           example: clave_segura123
+
+    SolicitudRecuperacion:
+      type: object
+      required: [email]
+      properties:
+        email:
+          type: string
+          format: email
+          example: ana@example.com
+        frontend_url:
+          type: string
+          format: uri
+          description: URL base del Frontend para construir el enlace de restablecimiento.
+          example: http://localhost:5001
+
+    RestablecimientoPassword:
+      type: object
+      required: [token, password]
+      properties:
+        token:
+          type: string
+          description: Token temporal firmado recibido en el enlace de recuperación.
+          example: eyJpZF91c3VhcmlvIjoyLCJlbWFpbCI6ImFuYUBleGFtcGxlLmNvbSJ9.aBcDeF.1234567890
+        password:
+          type: string
+          format: password
+          minLength: 6
+          example: nueva_clave_123
 
     Usuario:
       type: object
