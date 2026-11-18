@@ -12,7 +12,7 @@ Este sistema de venta de entradas está compuesto por dos repositorios complemen
 * **Contrato OpenAPI:** Ver archivo [`swagger.yaml`](./swagger.yaml)
 * **Backlog del Producto:** [backlog.md](./backlog.md)
 * **Reglas de Negocio y Alcance:** [Reglas de negocio.md](./Reglas%20de%20negocio.md)
-* **Esquema de Base de Datos:** [Tablas y relaciones.md](./Tablas%20y%20relaciones.md)
+* **Esquema de Base de Datos:** [Tablas y relaciones.md](./database/Tablas_relaciones.md)
 
 ---
 
@@ -27,7 +27,7 @@ Este sistema de venta de entradas está compuesto por dos repositorios complemen
 * Jorge Félix García Sánchez — `116133` — jfgarcias@fi.uba.ar
 * Diego Oliver Yujra Cossio — `116532` — dyujra@fi.uba.ar
 * Maximiliano Alexis Silva — `115666` — masilva@fi.uba.ar
-* Lucio Valentín Villagra — `116288` — lvillagra@fi.uba.ar[cite: 4]
+* Lucio Valentín Villagra — `116288` — lvillagra@fi.uba.ar
 
 ---
 
