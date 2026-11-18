@@ -29,7 +29,6 @@ def execute_query(query, params=None, fetchone=False, fetchall=False, commit=Fal
     cursor = None
     try:
         conn = get_db_connection()
-        # Cursor de diccionario para mapear columnas a claves JSON automáticamente
         cursor = conn.cursor(dictionary=True)
         cursor.execute(query, params or ())
         

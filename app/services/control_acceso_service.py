@@ -14,3 +14,11 @@ def validar_qr(codigo_qr, id_funcion):
     control_acceso_repository.marcar_qr_usado(codigo_qr)
     return {"codigo_qr": codigo_qr, "estado_qr": "USADO"}, None
 
+
+def consultar_qr(codigo_qr):
+    resultado = control_acceso_repository.obtener_qr_con_funcion(codigo_qr)
+    if resultado is None:
+        return None, "QR_NO_ENCONTRADO"
+    if resultado["estado_qr"] != "PENDIENTE":
+        return None, "QR_NO_VALIDO"
+    return resultado, None
