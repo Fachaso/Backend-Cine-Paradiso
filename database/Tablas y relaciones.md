@@ -11,26 +11,26 @@
 
 ```mermaid
 erDiagram
-    SUCURSALES ||--o{ SALAS : contiene
-    SALAS ||--o{ ASIENTOS : posee
-    SALAS ||--o{ FUNCIONES : alberga
-    PELICULAS ||--o{ FUNCIONES : proyecta
-    PELICULAS ||--o{ RESENAS : recibe
+    SUCURSALES --{ SALAS : contiene
+    SALAS --{ ASIENTOS : posee
+    SALAS --{ FUNCIONES : alberga
+    PELICULAS --{ FUNCIONES : proyecta
+    PELICULAS --{ RESENAS : recibe
 
-    USUARIOS ||--o{ COMPRAS : realiza
-    USUARIOS ||--o{ RESENAS : escribe
+    USUARIOS --{ COMPRAS : realiza
+    USUARIOS --{ RESENAS : escribe
 
-    COMPRAS ||--o{ ENTRADAS : incluye
-    COMPRAS ||--o{ DETALLE_COMPRA_SERVICIOS : contrata
-    COMPRAS ||--o{ BLOQUEOS_ASIENTOS : reserva_temporalmente
+    COMPRAS --{ ENTRADAS : incluye
+    COMPRAS --{ DETALLE_COMPRA_SERVICIOS : contrata
+    COMPRAS --{ BLOQUEOS_ASIENTOS : reserva_temporalmente
 
-    FUNCIONES ||--o{ ENTRADAS : emite
-    FUNCIONES ||--o{ BLOQUEOS_ASIENTOS : bloquea
+    FUNCIONES --{ ENTRADAS : emite
+    FUNCIONES --{ BLOQUEOS_ASIENTOS : bloquea
 
-    ASIENTOS ||--o{ ENTRADAS : asigna
-    ASIENTOS ||--o{ BLOQUEOS_ASIENTOS : ocupa_temporalmente
+    ASIENTOS --{ ENTRADAS : asigna
+    ASIENTOS --{ BLOQUEOS_ASIENTOS : ocupa_temporalmente
 
-    SERVICIOS ||--o{ DETALLE_COMPRA_SERVICIOS : detalla
+    SERVICIOS --{ DETALLE_COMPRA_SERVICIOS : detalla
 ```
 
 ---
@@ -210,7 +210,3 @@ El esquema habilita `SET GLOBAL event_scheduler = ON` y define el evento recurre
 1. Cambia `compras.estado_compra` de `'PENDIENTE'` a `'EXPIRADA'` cuando existe al menos un registro asociado en `bloqueos_asientos` con `estado = 'ACTIVO'` cuya marca `vence_en <= NOW()`.
 2. Actualiza simultáneamente `bloqueos_asientos.estado` de `'ACTIVO'` a `'EXPIRADO'` para las compras expiradas, liberando los asientos de forma automática.
 ````[cite: 1]
-
----
-
-Cuando quieras seguimos con el **Paso 2 (`endpoints.md`)**: pasame `app.py` (o donde registres los blueprints) y los archivos actuales de `app/routes/` del Backend (más los `routes/` del Frontend).
