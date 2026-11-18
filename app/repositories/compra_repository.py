@@ -38,6 +38,13 @@ def eliminar_compra_pendiente(id_compra):
         conexion.autocommit = True
         cursor = conexion.cursor()
         cursor.execute(
+            """DELETE b
+            FROM bloqueos_asientos AS b
+            JOIN compras AS c ON c.id_compra = b.id_compra
+            WHERE b.id_compra = %s AND c.estado_compra = 'PENDIENTE'""",
+            (id_compra,)
+        )
+        cursor.execute(
             """DELETE FROM compras WHERE id_compra = %s
             AND estado_compra = 'PENDIENTE'""",
             (id_compra,)
