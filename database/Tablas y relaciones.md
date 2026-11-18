@@ -1,9 +1,9 @@
 # Documentación del Esquema de Base de Datos — Cine Paradiso
 
-**Proyecto:** Sistema de Venta de Entradas de Cine (Cine Paradiso)  
-**Tarea asociada:** TASK-02 (Script de Creación de Base de Datos SQL)  
-**Motor de BD:** MySQL 8.0+ (Engine: InnoDB, Charset: `utf8mb4_unicode_ci`)  
-**Estrategia de Fechas:** Uso estricto de campos unificados `DATETIME` en lugar de separar fecha y hora.
+* **Base de datos:** `cine_paradiso`
+* **Motor:** MySQL 8.0+
+* **Estrategia temporal:** Uso unificado de `DATETIME` para fechas y horarios de funciones, compras, bloqueos y reseñas.
+* **Total de tablas:** 12 tablas relacionales + 1 evento programado (`expirar_compras_pendientes`).
 
 ---
 
@@ -12,97 +12,205 @@
 ```mermaid
 erDiagram
     SUCURSALES ||--o{ SALAS : contiene
-    SUCURSALES ||--o{ INVENTARIO_SUCURSAL : gestiona
-    SUCURSALES ||--o{ USUARIOS : asigna_empleados
     SALAS ||--o{ ASIENTOS : posee
     SALAS ||--o{ FUNCIONES : alberga
     PELICULAS ||--o{ FUNCIONES : proyecta
-    
-    USUARIOS ||--o{ ORDENES : realiza
-    USUARIOS ||--o{ BLOQUEOS_ASIENTOS : reserva
-    USUARIOS ||--o{ RESEÑAS : opina
-    USUARIOS ||--o{ INCIDENCIAS : reporta
-    
-    FUNCIONES ||--o{ BLOQUEOS_ASIENTOS : asigna
+    PELICULAS ||--o{ RESENAS : recibe
+
+    USUARIOS ||--o{ COMPRAS : realiza
+    USUARIOS ||--o{ RESENAS : escribe
+
+    COMPRAS ||--o{ ENTRADAS : incluye
+    COMPRAS ||--o{ DETALLE_COMPRA_SERVICIOS : contrata
+    COMPRAS ||--o{ BLOQUEOS_ASIENTOS : reserva_temporalmente
+
     FUNCIONES ||--o{ ENTRADAS : emite
-    FUNCIONES ||--o{ CUPOS_SERVICIOS_FUNCION : limita
-    FUNCIONES ||--o{ RESEÑAS : evalua
-    
-    ORDENES ||--o{ ENTRADAS : incluye
-    ORDENES ||--|| CODIGOS_QR : genera
-    ORDENES ||--o{ DETALLE_ORDEN_PRODUCTOS : consume
-    ORDENES ||--o{ DETALLE_ORDEN_SERVICIOS : contrata
-    ORDENES ||--o| CANCELACIONES : solicita
-    ORDENES ||--o| REVISIONES_INVENTARIO : audita
-    
-    PRODUCTOS ||--o{ INVENTARIO_SUCURSAL : stock
-    PRODUCTOS ||--o{ DETALLE_ORDEN_PRODUCTOS : vende
-    PRODUCTOS ||--o{ COTIZACION_PRODUCTOS : congela_precio
-    
-    SERVICIOS ||--o{ CUPOS_SERVICIOS_FUNCION : parametriza
-    SERVICIOS ||--o{ DETALLE_ORDEN_SERVICIOS : cobra
-    
-    DETALLE_ORDEN_PRODUCTOS ||--o{ ENTREGAS_PRODUCTOS : despacha
-    DETALLE_ORDEN_SERVICIOS ||--o{ USOS_SERVICIOS : valida
-    
-    CANCELACIONES ||--|| REINTEGROS : procesa
-    REINTEGROS ||--o{ CONCEPTOS_REINTEGRO : desglosa
+    FUNCIONES ||--o{ BLOQUEOS_ASIENTOS : bloquea
+
+    ASIENTOS ||--o{ ENTRADAS : asigna
+    ASIENTOS ||--o{ BLOQUEOS_ASIENTOS : ocupa_temporalmente
+
+    SERVICIOS ||--o{ DETALLE_COMPRA_SERVICIOS : detalla
 ```
 
 ---
 
-## 2. Estructura Modular y Resumen de Tablas
+## 2. Detalle de Tablas
 
-### Módulo 1: Cine, Salas y Cartelera
-* **`sucursales`**: Locales físicos del complejo cinematográfico.
-* **`salas`**: Espacios de proyección pertenecientes a una sucursal (`id_sucursal`).
-* **`asientos`**: Grilla matricial de butacas (`fila`, `numero`, `tipo`) pertenecientes a una sala.
-* **`peliculas`**: Registro local de películas (título, duración, sinopsis, poster) sincronizadas con la API externa.
-* **`funciones`**: Horarios de proyección que relacionan una película con una sala en un instante `DATETIME`.
+### 2.1. `sucursales`
+Almacena los complejos cinematográficos de la cadena.
 
-### Módulo 2: Usuarios y Autenticación
-* **`usuarios`**: Gestión de clientes, empleados y administradores (`rol`: `CLIENTE`, `EMPLEADO`, `ADMIN`). Soporta vinculación opcional a una sucursal para restringir permisos operativos.
-
-### Módulo 3: Bloqueos Temporales
-* **`bloqueos_asientos`**: Reserva temporal de 5 minutos ($NOW() + 5\text{ min}$) durante la selección de butacas para prevenir la sobreventa concurrente.
-
-### Módulo 4: Órdenes, Entradas y Códigos QR
-* **`ordenes`**: Cabecera unificada de transacciones (compras de cine o pedidos exprés de Candy Bar).
-* **`entradas`**: Entradas individuales emitidas por asiento e integradas en una orden de cine.
-* **`codigos_qr`**: Códigos QR criptográficos únicos por orden para el acceso a sala (`ACCESO_SALA`) o retiro de productos (`RETIRO_CANDYBAR`).
-
-### Módulo 5: Candy Bar, Inventario y Cotización
-* **`productos`**: Catálogo de snacks, bebidas y combos.
-* **`inventario_sucursal`**: Existencias y stock mínimo de cada producto por sucursal física.
-* **`cotizacion_productos`**: Congelamiento de precios durante la ventana de 5 minutos de la orden.
-* **`detalle_orden_productos`**: Ítems consumidos en cada orden.
-* **`entregas_productos`**: Registro de entrega física en mostrador por parte del empleado.
-
-### Módulo 6: Auditoría de Inventario No Retirado
-* **`revisiones_inventario`**: Cabecera de inspección física única para pedidos en estado `NO_RETIRADO`.
-* **`detalle_revision_inventario`**: Declaración de insumos recuperables devueltos al stock frente a desechos.
-
-### Módulo 7: Servicios Adicionales
-* **`servicios`**: Catálogo de adicionales (estacionamiento, acceso VIP, anteojos 3D).
-* **`cupos_servicios_funcion`**: Límite de disponibilidad de servicios por función programada.
-* **`detalle_orden_servicios`**: Servicios contratados dentro de una orden.
-* **`usos_servicios`**: Control de validación física de servicios por parte del personal.
-
-### Módulo 8: Incidencias, Cancelaciones y Reintegros
-* **`incidencias`**: Registro de fallas técnicas o daños en butacas.
-* **`reasignaciones_entradas`**: Reubicación de clientes ante contingencias.
-* **`cancelaciones`**: Solicitudes de cancelación autogestionadas (hasta 60 minutos antes de la función) o por fuerza mayor.
-* **`reintegros`**: Comprobante de devolución monetaria simulada.
-* **`conceptos_reintegro`**: Desglose ítem por ítem del monto reembolsado.
-
-### Módulo 9: Reseñas y Puntuaciones (Extra/Deseable)
-* **`reseñas`**: Calificación (1 a 5 estrellas) y comentarios habilitados únicamente para usuarios que hayan asistido a la función.
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_sucursal` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la sucursal. |
+| `nombre` | `VARCHAR(100)` | NO | — | Nombre comercial de la sucursal. |
+| `direccion` | `VARCHAR(150)` | NO | — | Dirección física del complejo. |
+| `ciudad` | `VARCHAR(100)` | NO | — | Ciudad o localidad donde se ubica. |
 
 ---
 
-## 3. Principales Reglas de Negocio Implementadas
+### 2.2. `salas`
+Almacena las salas de proyección pertenecientes a cada sucursal.
 
-1. **Campos Temporalmente Unificados:** Todos los eventos temporales utilizan el tipo `DATETIME` para simplificar comparaciones de rangos y evitar inconsistencias de husos horarios.
-2. **Control Concurrente por Bloqueos:** Los registros en `bloqueos_asientos` caducan automáticamente a los 5 minutos si la orden no pasa a estado `CONFIRMADA`.
-3. **Inmutabilidad de Datos Financieros:** Los valores unitarios se congelan en tablas de detalle (`entradas`, `detalle_orden_productos`, `cotizacion_productos`) para preservar la integridad histórica aunque cambie el catálogo.
-4. **Validación Antisolapamiento de Funciones:** Las funciones programadas contemplan un margen de limpieza/desalojo en la sala física antes de admitir un nuevo espectáculo.
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_sala` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la sala. |
+| `id_sucursal` | `INT` | NO | `FOREIGN KEY` → `sucursales(id_sucursal)` (`ON DELETE CASCADE`) | Sucursal a la que pertenece la sala. |
+| `nombre` | `VARCHAR(50)` | NO | — | Nombre o número identificador de la sala (ej. `Sala 1`). |
+| `capacidad` | `INT` | NO | — | Cantidad total de butacas generadas para la sala. |
+
+---
+
+### 2.3. `asientos`
+Representa cada butaca física dentro de una sala, identificada por fila y número.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_asiento` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la butaca. |
+| `id_sala` | `INT` | NO | `FOREIGN KEY` → `salas(id_sala)` (`ON DELETE CASCADE`) | Sala a la que pertenece el asiento. |
+| `fila` | `VARCHAR(5)` | NO | `UNIQUE (id_sala, fila, numero)` | Letra o código de fila (ej. `A`, `B`). |
+| `numero` | `INT` | NO | `UNIQUE (id_sala, fila, numero)` | Número de asiento dentro de la fila. |
+
+* **Restricción única:** `uq_asiento_sala UNIQUE (id_sala, fila, numero)` — impide duplicar una misma coordenada de asiento dentro de una misma sala.
+
+---
+
+### 2.4. `peliculas`
+Catálogo local de películas importadas desde la API externa (TMDb / OMDb).
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_pelicula` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la película en el catálogo local. |
+| `titulo` | `VARCHAR(150)` | NO | — | Título de la película. |
+| `sinopsis` | `TEXT` | SÍ | — | Descripción argumental de la película. |
+| `poster_url` | `VARCHAR(255)` | SÍ | — | URL del póster oficial. |
+| `genero` | `VARCHAR(50)` | NO | — | Género cinematográfico principal. |
+| `duracion_min` | `INT` | NO | — | Duración total de la película en minutos. |
+| `clasificacion` | `VARCHAR(20)` | NO | — | Clasificación por edad (ej. `ATP`, `+13`, `+16`). |
+
+---
+
+### 2.5. `funciones`
+Programación de proyecciones de una película en una sala, fecha y horario específicos.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_funcion` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la función. |
+| `id_pelicula` | `INT` | NO | `FOREIGN KEY` → `peliculas(id_pelicula)` (`ON DELETE CASCADE`) | Película proyectada en la función. |
+| `id_sala` | `INT` | NO | `FOREIGN KEY` → `salas(id_sala)` (`ON DELETE RESTRICT`) | Sala donde se realiza la proyección. |
+| `fecha_hora` | `DATETIME` | NO | — | Fecha y hora de inicio de la función en un único campo. |
+| `precio_entrada` | `DECIMAL(10,2)` | NO | — | Valor unitario vigente de la entrada para esta función. |
+
+---
+
+### 2.6. `usuarios`
+Cuentas de clientes y administradores registrados en el sistema.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_usuario` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único del usuario. |
+| `nombre` | `VARCHAR(100)` | NO | — | Nombre completo del usuario. |
+| `email` | `VARCHAR(100)` | NO | `UNIQUE` | Correo electrónico único utilizado para login y comprobantes. |
+| `password_hash` | `VARCHAR(255)` | NO | — | Hash criptográfico de la contraseña. |
+| `rol` | `ENUM('CLIENTE', 'ADMIN')` | NO | `DEFAULT 'CLIENTE'` | Rol de acceso en el sistema (`CLIENTE` o `ADMIN`). |
+
+---
+
+### 2.7. `compras`
+Cabecera de cada operación de compra realizada por un usuario, junto con su estado y código QR.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_compra` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la compra. |
+| `id_usuario` | `INT` | NO | `FOREIGN KEY` → `usuarios(id_usuario)` (`ON DELETE CASCADE`) | Cliente que realiza la compra. |
+| `fecha_compra` | `DATETIME` | NO | `DEFAULT CURRENT_TIMESTAMP` | Fecha y hora de creación de la compra. |
+| `monto_total` | `DECIMAL(10,2)` | NO | — | Importe total calculado (entradas + servicios). |
+| `estado_compra` | `ENUM('PENDIENTE', 'CONFIRMADA', 'CANCELADA', 'EXPIRADA')` | NO | `DEFAULT 'PENDIENTE'` | Estado del ciclo de vida de la compra. |
+| `codigo_qr` | `VARCHAR(100)` | SÍ | `UNIQUE` | Código identificador único del QR generado al confirmar. |
+| `estado_qr` | `ENUM('PENDIENTE', 'USADO', 'CANCELADO')` | SÍ | — | Estado operativo del código QR para control de acceso. |
+
+---
+
+### 2.8. `entradas`
+Detalle de entradas emitidas por función y butaca dentro de una compra.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_entrada` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la entrada. |
+| `id_compra` | `INT` | NO | `FOREIGN KEY` → `compras(id_compra)` (`ON DELETE CASCADE`) | Compra a la que pertenece la entrada. |
+| `id_funcion` | `INT` | NO | `FOREIGN KEY` → `funciones(id_funcion)` (`ON DELETE RESTRICT`) | Función asociada a la entrada. |
+| `id_asiento` | `INT` | NO | `FOREIGN KEY` → `asientos(id_asiento)` (`ON DELETE RESTRICT`) | Butaca asignada a la entrada. |
+| `precio` | `DECIMAL(10,2)` | NO | — | Precio histórico abonado por la entrada al momento de comprar. |
+
+* **Restricción única:** `uq_funcion_asiento UNIQUE (id_funcion, id_asiento)` — garantiza a nivel de motor SQL que una butaca no pueda venderse dos veces para la misma función.
+* **Comportamiento ante cancelación:** Al cancelarse una compra (`estado_qr = 'CANCELADO'`), se eliminan sus registros en `entradas` para liberar las butacas inmediatamente.
+
+---
+
+### 2.9. `servicios`
+Catálogo global de servicios adicionales disponibles para complementar una compra.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_servicio` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único del servicio. |
+| `nombre` | `VARCHAR(100)` | NO | — | Nombre del producto o servicio adicional. |
+| `descripcion` | `VARCHAR(255)` | SÍ | — | Detalle descriptivo del servicio. |
+| `tipo` | `ENUM('COMIDA', 'BEBIDA', 'COMBO', 'ESTACIONAMIENTO', 'VIP', 'OTRO')` | NO | — | Categoría del servicio. |
+| `precio` | `DECIMAL(10,2)` | NO | — | Precio unitario vigente en el catálogo. |
+
+---
+
+### 2.10. `detalle_compra_servicios`
+Relación N:M entre compras y servicios adicionales contratados, preservando el precio unitario histórico.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_detalle` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la línea de detalle. |
+| `id_compra` | `INT` | NO | `FOREIGN KEY` → `compras(id_compra)` (`ON DELETE CASCADE`) | Compra asociada. |
+| `id_servicio` | `INT` | NO | `FOREIGN KEY` → `servicios(id_servicio)` (`ON DELETE CASCADE`) | Servicio contratado. |
+| `cantidad` | `INT` | NO | — | Cantidad de unidades contratadas. |
+| `precio_unitario` | `DECIMAL(10,2)` | NO | — | Precio unitario congelado al momento de la compra. |
+
+---
+
+### 2.11. `bloqueos_asientos`
+Gestiona el bloqueo temporal de butacas por función durante el proceso de compra antes de su confirmación o expiración.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_funcion` | `INT` | NO | `PRIMARY KEY (id_funcion, id_asiento)`, `FOREIGN KEY` → `funciones(id_funcion)` (`ON DELETE CASCADE`) | Función sobre la cual se bloquea el asiento. |
+| `id_asiento` | `INT` | NO | `PRIMARY KEY (id_funcion, id_asiento)`, `FOREIGN KEY` → `asientos(id_asiento)` (`ON DELETE CASCADE`) | Butaca bloqueada temporalmente. |
+| `id_compra` | `INT` | NO | `INDEX idx_bloqueos_asientos_compra`, `FOREIGN KEY` → `compras(id_compra)` (`ON DELETE CASCADE`) | Compra pendiente que origina el bloqueo. |
+| `precio_entrada` | `DECIMAL(10,2)` | NO | `DEFAULT 0.00` | Precio de la entrada congelado durante el bloqueo. |
+| `vence_en` | `DATETIME` | NO | — | Marca temporal límite de vigencia del bloqueo. |
+| `estado` | `ENUM('ACTIVO', 'CONFIRMADO', 'EXPIRADO', 'LIBERADO')` | NO | `DEFAULT 'ACTIVO'` | Estado actual del bloqueo de la butaca. |
+
+---
+
+### 2.12. `resenas`
+Almacena las puntuaciones y comentarios de los usuarios sobre películas a las que asistieron.
+
+| Columna | Tipo de dato | Nulo | Clave / Restricción | Descripción |
+| :--- | :--- | :--- | :--- | :--- |
+| `id_resena` | `INT` | NO | `PRIMARY KEY`, `AUTO_INCREMENT` | Identificador único de la reseña. |
+| `id_usuario` | `INT` | NO | `FOREIGN KEY` → `usuarios(id_usuario)` (`ON DELETE CASCADE`) | Autor de la reseña. |
+| `id_pelicula` | `INT` | NO | `FOREIGN KEY` → `peliculas(id_pelicula)` (`ON DELETE CASCADE`) | Película reseñada. |
+| `puntuacion` | `TINYINT` | NO | `CHECK (puntuacion BETWEEN 1 AND 5)` | Calificación entera entre `1` y `5`. |
+| `comentario` | `TEXT` | SÍ | — | Comentario opcional del espectador. |
+| `fecha` | `DATETIME` | NO | `DEFAULT CURRENT_TIMESTAMP` | Fecha y hora de publicación de la reseña. |
+
+* **Restricción única:** `uq_usuario_pelicula UNIQUE (id_usuario, id_pelicula)` — permite como máximo una reseña por usuario y película.
+
+---
+
+## 3. Automatización en Base de Datos (MySQL Event Scheduler)
+
+El esquema habilita `SET GLOBAL event_scheduler = ON` y define el evento recurrente **`expirar_compras_pendientes`**, que se ejecuta cada **1 segundo**:
+
+1. Cambia `compras.estado_compra` de `'PENDIENTE'` a `'EXPIRADA'` cuando existe al menos un registro asociado en `bloqueos_asientos` con `estado = 'ACTIVO'` cuya marca `vence_en <= NOW()`.
+2. Actualiza simultáneamente `bloqueos_asientos.estado` de `'ACTIVO'` a `'EXPIRADO'` para las compras expiradas, liberando los asientos de forma automática.
+````[cite: 1]
+
+---
+
+Cuando quieras seguimos con el **Paso 2 (`endpoints.md`)**: pasame `app.py` (o donde registres los blueprints) y los archivos actuales de `app/routes/` del Backend (más los `routes/` del Frontend).
