@@ -209,4 +209,3 @@ El esquema habilita `SET GLOBAL event_scheduler = ON` y define el evento recurre
 
 1. Cambia `compras.estado_compra` de `'PENDIENTE'` a `'EXPIRADA'` cuando existe al menos un registro asociado en `bloqueos_asientos` con `estado = 'ACTIVO'` cuya marca `vence_en <= NOW()`.
 2. Actualiza simultáneamente `bloqueos_asientos.estado` de `'ACTIVO'` a `'EXPIRADO'` para las compras expiradas, liberando los asientos de forma automática.
-````[cite: 1]
