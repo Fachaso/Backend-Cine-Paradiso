@@ -43,42 +43,36 @@ def qr_en_horario(codigo_qr, id_funcion):
 
 def obtener_qr_con_funcion(codigo_qr):
     filas = execute_query(
-        "SELECT c.codigo_qr, c.estado_qr, e.id_funcion, "
+        "SELECT c.codigo_qr, c.estado_qr, "
+        "e.id_funcion, "
         "p.titulo AS pelicula_titulo, s.nombre AS sala_nombre, "
         "f.fecha_hora, a.fila, a.numero "
         "FROM compras c "
-        "JOIN entradas e ON e.id_compra = c.id_compra "
-        "JOIN funciones f ON f.id_funcion = e.id_funcion "
-        "JOIN peliculas p ON p.id_pelicula = f.id_pelicula "
-        "JOIN salas s ON s.id_sala = f.id_sala "
-        "JOIN asientos a ON a.id_asiento = e.id_asiento "
-        "WHERE c.codigo_qr = %s",
-        (codigo_qr,),
-        fetchone=True,
-    )
-    if filas is None:
-        return None
-
-    butacas = []
-    id_funcion = filas["id_funcion"]
-
-    todas_filas = execute_query(
-        "SELECT a.fila, a.numero "
-        "FROM compras c "
-        "JOIN entradas e ON e.id_compra = c.id_compra "
-        "JOIN asientos a ON a.id_asiento = e.id_asiento "
+        "LEFT JOIN entradas e ON e.id_compra = c.id_compra "
+        "LEFT JOIN funciones f ON f.id_funcion = e.id_funcion "
+        "LEFT JOIN peliculas p ON p.id_pelicula = f.id_pelicula "
+        "LEFT JOIN salas s ON s.id_sala = f.id_sala "
+        "LEFT JOIN asientos a ON a.id_asiento = e.id_asiento "
         "WHERE c.codigo_qr = %s",
         (codigo_qr,),
         fetchall=True,
     )
-    for f in (todas_filas or []):
-        butacas.append(f"{f['fila']}{f['numero']}")
+    if not filas:
+        return None
+
+    butacas = []
+    for f in filas:
+        if f["fila"] is not None:
+            butacas.append(f"{f['fila']}{f['numero']}")
+
+    datos = filas[0]
+
     return {
-        "codigo_qr": filas["codigo_qr"],
-        "estado_qr": filas["estado_qr"],
-        "id_funcion": id_funcion,
-        "pelicula_titulo": filas["pelicula_titulo"],
-        "sala_nombre": filas["sala_nombre"],
-        "fecha_hora": str(filas["fecha_hora"]),
+        "codigo_qr": datos["codigo_qr"],
+        "estado_qr": datos["estado_qr"],
+        "id_funcion": datos.get("id_funcion"),
+        "pelicula_titulo": datos.get("pelicula_titulo"),
+        "sala_nombre": datos.get("sala_nombre"),
+        "fecha_hora": str(datos["fecha_hora"]) if datos.get("fecha_hora") else None,
         "butacas": butacas,
     }

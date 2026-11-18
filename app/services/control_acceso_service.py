@@ -19,4 +19,6 @@ def consultar_qr(codigo_qr):
     resultado = control_acceso_repository.obtener_qr_con_funcion(codigo_qr)
     if resultado is None:
         return None, "QR_NO_ENCONTRADO"
+    if resultado["estado_qr"] != "PENDIENTE":
+        return None, "QR_NO_VALIDO"
     return resultado, None
