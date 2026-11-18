@@ -10,27 +10,27 @@
 ## 1. Diagrama Entidad-Relación (ERD)
 
 ```mermaid
-erDiagram
-    SUCURSALES --{ SALAS : contiene
-    SALAS --{ ASIENTOS : posee
-    SALAS --{ FUNCIONES : alberga
-    PELICULAS --{ FUNCIONES : proyecta
-    PELICULAS --{ RESENAS : recibe
+flowchart TD
+    SUCURSALES ---|contiene| SALAS
+    SALAS ---|posee| ASIENTOS
+    SALAS ---|alberga| FUNCIONES
+    PELICULAS ---|proyecta| FUNCIONES
+    PELICULAS ---|recibe| RESENAS
 
-    USUARIOS --{ COMPRAS : realiza
-    USUARIOS --{ RESENAS : escribe
+    USUARIOS ---|realiza| COMPRAS
+    USUARIOS ---|escribe| RESENAS
 
-    COMPRAS --{ ENTRADAS : incluye
-    COMPRAS --{ DETALLE_COMPRA_SERVICIOS : contrata
-    COMPRAS --{ BLOQUEOS_ASIENTOS : reserva_temporalmente
+    COMPRAS ---|incluye| ENTRADAS
+    COMPRAS ---|contrata| DETALLE_COMPRA_SERVICIOS
+    COMPRAS ---|reserva_temporalmente| BLOQUEOS_ASIENTOS
 
-    FUNCIONES --{ ENTRADAS : emite
-    FUNCIONES --{ BLOQUEOS_ASIENTOS : bloquea
+    FUNCIONES ---|emite| ENTRADAS
+    FUNCIONES ---|bloquea| BLOQUEOS_ASIENTOS
 
-    ASIENTOS --{ ENTRADAS : asigna
-    ASIENTOS --{ BLOQUEOS_ASIENTOS : ocupa_temporalmente
+    ASIENTOS ---|asigna| ENTRADAS
+    ASIENTOS ---|ocupa_temporalmente| BLOQUEOS_ASIENTOS
 
-    SERVICIOS --{ DETALLE_COMPRA_SERVICIOS : detalla
+    SERVICIOS ---|detalla| DETALLE_COMPRA_SERVICIOS
 ```
 
 ---
