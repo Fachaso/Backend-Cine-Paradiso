@@ -68,15 +68,6 @@
 - [x] Los formularios se procesan mediante rutas Flask y llamadas `requests` en `services/auth_service.py`.
 - [x] Al iniciar sesión se guardan `id_usuario`, `nombre`, `rol` y `backend_session` en sesión; existe opción de cierre de sesión.
 
-### US-02B — Recuperación y restablecimiento de contraseña `[BACKEND]` `[FRONTEND]` `[obligatorio]`
-**Como** usuario registrado, **quiero** recuperar mi contraseña mediante un enlace enviado a mi correo electrónico **para** volver a ingresar si la olvidé.
-
-**API:** `POST /api/recuperar-password`, `POST /api/restablecer-password`.  
-**SQL:** `usuarios`.
-
-- [x] Contrato definido en `swagger.yaml` v2.1.0 con token firmado de **un solo uso**, vigencia de **30 minutos** y respuesta neutra `200` (sin enumeración de correos registrados).
-- [ ] Integración de la rama de recuperación/restablecimiento en el repositorio principal del Backend y vistas correspondientes en el Frontend.
-
 ### US-03 — Perfil e historial de compras `[BACKEND]` `[FRONTEND]` `[obligatorio]`
 **Como** cliente autenticado, **quiero** consultar mis datos personales, compras, entradas, servicios y películas vistas **para** hacer seguimiento de mi actividad.
 
