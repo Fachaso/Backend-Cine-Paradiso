@@ -1,17 +1,13 @@
-<div align="right">
-    <img width="32px" src="img/logo_intro.desarrollo.software.png">
-</div>
+# Proyecto Integrador - Sistema de venta de entradas de cine
 
-# Cine Paradiso — Backend API REST
+## 🔗 Estructura del Proyecto
+Este sistema de venta de entradas está compuesto por dos repositorios complementarios:
 
-Sistema integral de venta de entradas de cine desarrollado como Proyecto Integrador para la cátedra **Introducción al Desarrollo de Software (FIUBA)**. Este repositorio contiene la **API REST en Flask** encargada de la lógica de negocio, autenticación por sesión, persistencia en MySQL 8, integración con TMDb, emisión de códigos QR, envío de comprobantes por correo electrónico y generación de reportes estadísticos[cite: 3, 4, 19].
-
----
+*   **[Backend (API REST)](https://github.com/Fachaso/Backend-Cine-Paradiso):** Desarrollado en Flask, maneja la lógica de negocio, la conexión a la base de datos MySQL, el sistema de estadísticas y la seguridad de los endpoints.
+*   **[Frontend (Interfaz de Usuario)](https://github.com/lutzio07/Front-Cine-Paradiso):** Contiene tanto la aplicación web de acceso para los usuarios finales como el backoffice para que los administradores configuren las salas y películas.
 
 ## Enlaces del Proyecto
 
-* **Repositorio Backend (API REST):** [Backend-Cine-Paradiso](https://github.com/Fachaso/Backend-Cine-Paradiso)
-* **Repositorio Frontend (BFF Flask + Jinja2):** [Front-Cine-Paradiso](https://github.com/lutzio07/Front-Cine-Paradiso)
 * **Diseño / Mockups:** [https://www.figma.com/proto/sehm8206edP58cDz0Sj8f8/Figma-basics?node-id=3825-988&p=f&t=nzzL0frzXv6JGVMO-1&scaling=min-zoom&content-scaling=fixed&page-id=3825%3A5]
 * **Contrato OpenAPI:** Ver archivo [`swagger.yaml`](./swagger.yaml)[cite: 4, 5]
 * **Backlog del Producto:** [backlog.md](./backlog.md)
