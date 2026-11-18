@@ -457,9 +457,15 @@ def obtener_compra(id_compra, id_usuario):
             (id_compra,)
         )
         cursor.execute(
-            """SELECT id_compra, id_usuario, fecha_compra, monto_total,
-                estado_compra, codigo_qr, estado_qr FROM compras
-            WHERE id_compra = %s AND id_usuario = %s""",
+            """SELECT c.id_compra, c.id_usuario, c.fecha_compra, c.monto_total,
+                c.estado_compra, c.codigo_qr, c.estado_qr,
+                COALESCE((SELECT MAX(DATE_ADD(f.fecha_hora, INTERVAL p.duracion_min MINUTE) <= NOW())
+                    FROM bloqueos_asientos b
+                    JOIN funciones f ON f.id_funcion = b.id_funcion
+                    JOIN peliculas p ON p.id_pelicula = f.id_pelicula
+                    WHERE b.id_compra = c.id_compra), 0) AS funcion_finalizada
+            FROM compras c
+            WHERE c.id_compra = %s AND c.id_usuario = %s""",
             (id_compra, id_usuario)
         )
         compra = cursor.fetchone()

@@ -1633,6 +1633,11 @@ components:
           nullable: true
           enum: [PENDIENTE, USADO, CANCELADO]
           example: PENDIENTE
+        funcion_finalizada:
+          type: integer
+          enum: [0, 1]
+          description: 1 si la función de la compra ya finalizó (según la hora del servidor).
+          example: 0
     Entrada:
       type: object
       required: [id_entrada, id_compra, id_funcion, id_asiento, precio]
