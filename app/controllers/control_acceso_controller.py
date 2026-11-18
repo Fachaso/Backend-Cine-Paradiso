@@ -32,6 +32,7 @@ def validar_qr_ingreso(codigo_qr):
         return respuesta_error(500, "ERROR_INTERNO", "No fue posible validar el código QR")
 
 
+@requiere_admin
 def consultar_qr(codigo_qr):
     try:
         dato, error = control_acceso_service.consultar_qr(codigo_qr)
