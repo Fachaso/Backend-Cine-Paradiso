@@ -38,6 +38,13 @@ def eliminar_compra_pendiente(id_compra):
         conexion.autocommit = True
         cursor = conexion.cursor()
         cursor.execute(
+            """DELETE b
+            FROM bloqueos_asientos AS b
+            JOIN compras AS c ON c.id_compra = b.id_compra
+            WHERE b.id_compra = %s AND c.estado_compra = 'PENDIENTE'""",
+            (id_compra,)
+        )
+        cursor.execute(
             """DELETE FROM compras WHERE id_compra = %s
             AND estado_compra = 'PENDIENTE'""",
             (id_compra,)
@@ -69,12 +76,19 @@ def crear_compra_pendiente(id_usuario, datos):
         conexion.autocommit = True
         cursor = conexion.cursor(dictionary=True)
         cursor.execute(
-            "SELECT id_sala, precio_entrada FROM funciones WHERE id_funcion = %s",
+            """SELECT f.id_sala, f.precio_entrada,
+                DATE_ADD(f.fecha_hora, INTERVAL p.duracion_min MINUTE) <= NOW()
+                    AS finalizada
+            FROM funciones f
+            JOIN peliculas p ON p.id_pelicula = f.id_pelicula
+            WHERE f.id_funcion = %s""",
             (datos["id_funcion"],)
         )
         funcion = cursor.fetchone()
         if funcion is None:
             return _error_compra("FUNCION_NO_ENCONTRADA", "La función no existe", 404)
+        if funcion["finalizada"]:
+            return _error_compra("FUNCION_FINALIZADA", "La función ya finalizó", 409)
 
         ids = datos["asientos_ids"]
         marcas = ", ".join(["%s"] * len(ids))
@@ -207,16 +221,24 @@ def confirmar_compra(id_compra, id_usuario, datos):
         if ids_servicios:
             marcas = ", ".join(["%s"] * len(ids_servicios))
             cursor.execute(
-                f"SELECT id_servicio, precio FROM servicios WHERE id_servicio IN ({marcas})",
+                f"SELECT id_servicio, precio, tipo FROM servicios WHERE id_servicio IN ({marcas})",
                 tuple(ids_servicios)
             )
-            precios = {s["id_servicio"]: s["precio"] for s in cursor.fetchall()}
+            catalogo = {s["id_servicio"]: s for s in cursor.fetchall()}
+            precios = {i: s["precio"] for i, s in catalogo.items()}
             for servicio in servicios:
                 if servicio["id_servicio"] not in precios:
                     return _error_compra(
                         "SERVICIO_NO_ENCONTRADO",
                         f"El servicio {servicio['id_servicio']} no existe",
                         404
+                    )
+                if (catalogo[servicio["id_servicio"]]["tipo"] == "VIP"
+                        and servicio["cantidad"] > len(asientos)):
+                    return _error_compra(
+                        "SERVICIO_CANTIDAD_INVALIDA",
+                        "El pase VIP no puede superar la cantidad de entradas",
+                        400
                     )
 
         total = sum((a["precio_entrada"] for a in asientos), Decimal("0.00"))
@@ -442,9 +464,15 @@ def obtener_compra(id_compra, id_usuario):
             (id_compra,)
         )
         cursor.execute(
-            """SELECT id_compra, id_usuario, fecha_compra, monto_total,
-                estado_compra, codigo_qr, estado_qr FROM compras
-            WHERE id_compra = %s AND id_usuario = %s""",
+            """SELECT c.id_compra, c.id_usuario, c.fecha_compra, c.monto_total,
+                c.estado_compra, c.codigo_qr, c.estado_qr,
+                COALESCE((SELECT MAX(DATE_ADD(f.fecha_hora, INTERVAL p.duracion_min MINUTE) <= NOW())
+                    FROM bloqueos_asientos b
+                    JOIN funciones f ON f.id_funcion = b.id_funcion
+                    JOIN peliculas p ON p.id_pelicula = f.id_pelicula
+                    WHERE b.id_compra = c.id_compra), 0) AS funcion_finalizada
+            FROM compras c
+            WHERE c.id_compra = %s AND c.id_usuario = %s""",
             (id_compra, id_usuario)
         )
         compra = cursor.fetchone()

@@ -518,6 +518,13 @@ paths:
           schema:
             type: string
             format: date
+        - name: vigentes
+          in: query
+          required: false
+          description: Con true, excluye las funciones que ya finalizaron.
+          schema:
+            type: string
+            enum: ['true', 'false']
       responses:
         '200':
           description: Funciones disponibles con datos de película, sala y sucursal
@@ -829,6 +836,8 @@ paths:
       description: >
         Valida la función, los asientos y los servicios opcionales; calcula los precios
         en el servidor y registra la compra completa con sus entradas y servicios.
+        Devuelve 409 FUNCION_FINALIZADA si la función ya terminó y
+        400 SERVICIO_CANTIDAD_INVALIDA si el pase VIP supera la cantidad de entradas
       requestBody:
         required: true
         content:
@@ -1735,6 +1744,11 @@ components:
           nullable: true
           enum: [PENDIENTE, USADO, CANCELADO]
           example: PENDIENTE
+        funcion_finalizada:
+          type: integer
+          enum: [0, 1]
+          description: 1 si la función de la compra ya finalizó (según la hora del servidor).
+          example: 0
     Entrada:
       type: object
       required: [id_entrada, id_compra, id_funcion, id_asiento, precio]

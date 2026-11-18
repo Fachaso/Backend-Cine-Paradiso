@@ -40,8 +40,8 @@ def eliminar_funcion(id_funcion):
 
     return resultado, error, codigo_http
 
-def listar_funciones(id_pelicula=None, id_sucursal=None, fecha=None):
-    funciones = listar_funciones_repositorio(id_pelicula, id_sucursal, fecha)
+def listar_funciones(id_pelicula=None, id_sucursal=None, fecha=None, solo_vigentes=False):
+    funciones = listar_funciones_repositorio(id_pelicula, id_sucursal, fecha, solo_vigentes)
 
     return funciones, None, 200
 
