@@ -851,6 +851,39 @@ paths:
 
 
   /api/codigos-qr/{codigo_qr}:
+    get:
+      tags:
+        - Acceso
+      summary: Consultar los detalles de un código QR
+      description: >
+        Solo ADMIN. Devuelve la información completa de un código QR, incluyendo
+        película, sala, fecha y hora de la función y las butacas reservadas.
+        No consume ni modifica el estado del QR.
+      parameters:
+        - $ref: '#/components/parameters/CodigoQR'
+      responses:
+        '200':
+          description: Detalles del código QR
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status, data]
+                properties:
+                  status:
+                    type: string
+                    enum: [success]
+                    example: success
+                  data:
+                    $ref: '#/components/schemas/QRConFuncion'
+        '401':
+          $ref: '#/components/responses/Http401'
+        '403':
+          $ref: '#/components/responses/Http403'
+        '404':
+          $ref: '#/components/responses/Http404'
+        '409':
+          $ref: '#/components/responses/Http409'
     patch:
       tags:
         - Acceso
@@ -1728,6 +1761,37 @@ components:
           type: integer
           minimum: 1
           example: 1
+
+    QRConFuncion:
+      type: object
+      required: [codigo_qr, estado_qr, id_funcion, pelicula_titulo, sala_nombre, fecha_hora, butacas]
+      properties:
+        codigo_qr:
+          type: string
+          example: QR-8F92A1B3
+        estado_qr:
+          type: string
+          enum: [PENDIENTE, USADO, CANCELADO]
+          example: PENDIENTE
+        id_funcion:
+          type: integer
+          minimum: 1
+          example: 1
+        pelicula_titulo:
+          type: string
+          example: Gladiator II
+        sala_nombre:
+          type: string
+          example: Sala 1
+        fecha_hora:
+          type: string
+          format: date-time
+          example: '2026-11-05T20:00:00-03:00'
+        butacas:
+          type: array
+          items:
+            type: string
+          example: [A1, A2]
 
     Resena:
       type: object
