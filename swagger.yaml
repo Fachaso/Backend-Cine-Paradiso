@@ -755,6 +755,8 @@ paths:
       description: >
         Valida la función, los asientos y los servicios opcionales; calcula los precios
         en el servidor y registra la compra completa con sus entradas y servicios.
+        Devuelve 409 FUNCION_FINALIZADA si la función ya terminó y
+        400 SERVICIO_CANTIDAD_INVALIDA si el pase VIP supera la cantidad de entradas
       requestBody:
         required: true
         content:
