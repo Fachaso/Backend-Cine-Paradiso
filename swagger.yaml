@@ -322,8 +322,10 @@ paths:
         - Sucursales y salas
       summary: Crear sala en una sucursal y generar sus asientos
       description: >
-        Solo ADMIN. Crea la sala asociada a 'id_sucursal' y genera automáticamente
-        sus registros en la tabla 'asientos' según la capacidad indicada.
+        Solo ADMIN. Crea la sala asociada a 'id_sucursal' y genera sus asientos
+        a partir de las filas ordenadas y sus bloques izquierdo, central y derecho.
+        La capacidad se calcula con los asientos generados; los pasillos y espacios
+        sin asiento no se guardan ni cuentan en ella.
       parameters:
         - $ref: '#/components/parameters/IdSucursal'
       requestBody:
@@ -346,7 +348,15 @@ paths:
                     enum: [success]
                     example: success
                   data:
-                    $ref: '#/components/schemas/Sala'
+                    $ref: '#/components/schemas/SalaCreada'
+              example:
+                status: success
+                data:
+                  id_sala: 3
+                  id_sucursal: 1
+                  nombre: Sala 3
+                  capacidad: 39
+                  asientos_creados: 39
         '400':
           $ref: '#/components/responses/Http400'
         '401':
@@ -576,7 +586,8 @@ paths:
       summary: Consultar mapa de asientos libres y ocupados de la función
       description: >
         La disponibilidad se calcula cruzando los asientos de la sala con las
-        entradas activas de la función.
+        entradas activas y los bloqueos vigentes de la función. Cada asiento
+        incluye su columna física; los pasillos y posiciones vacías no aparecen.
       security: []
       parameters:
         - $ref: '#/components/parameters/IdFuncion'
@@ -1382,20 +1393,71 @@ components:
 
     SalaCrear:
       type: object
-      required: [nombre, capacidad]
+      additionalProperties: false
+      required: [nombre, filas]
+      description: >
+        Las filas se etiquetan A, B, ..., Z, AA, AB... en el orden recibido.
+        Debe haber al menos una fila y cinco butacas por fila. El bloque central
+        requiere al menos una butaca; cada lateral admite de cero a cinco.
+        La suma de todas las filas no puede superar 200 butacas. No se admite
+        capacidad en la solicitud.
       properties:
         nombre:
           type: string
           maxLength: 50
           example: Sala 3
-        capacidad:
-          type: integer
-          minimum: 1
-          example: 30
+        filas:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            additionalProperties: false
+            required: [bloques]
+            properties:
+              bloques:
+                type: array
+                minItems: 3
+                maxItems: 3
+                description: >
+                  Cantidades enteras [izquierdo, central, derecho]. Los laterales
+                  admiten de 0 a 5; el central requiere al menos 1.
+                items:
+                  type: integer
+                  minimum: 0
+          example:
+            - bloques: [0, 8, 0]
+            - bloques: [3, 10, 3]
+            - bloques: [5, 8, 2]
+
+    SalaCreada:
+      allOf:
+        - $ref: '#/components/schemas/Sala'
+        - type: object
+          required: [asientos_creados]
+          properties:
+            capacidad:
+              type: integer
+              minimum: 5
+              maximum: 200
+              description: Suma calculada de las butacas de todas las filas.
+              example: 39
+            asientos_creados:
+              type: integer
+              minimum: 5
+              maximum: 200
+              description: Total de asientos insertados, igual a capacidad.
+              example: 39
 
     DisponibilidadAsiento:
       type: object
-      required: [id_asiento, fila, numero, estado]
+      required: [id_asiento, fila, numero, columna, estado]
+      description: >
+        El número visible empieza en 1 en cada fila y continúa por los bloques
+        izquierdo, central y derecho. La columna indica la posición física.
+        Hay una columna vacía de pasillo a cada lado del bloque central si la
+        sala tiene asientos en esa zona lateral. Los laterales se alinean hacia
+        su pasillo y el centro se centra dentro del ancho central máximo; cuando
+        sobra una columna impar, el espacio extra queda a la derecha.
       properties:
         id_asiento:
           type: integer
@@ -1408,6 +1470,10 @@ components:
           type: integer
           minimum: 1
           example: 1
+        columna:
+          type: integer
+          minimum: 1
+          example: 8
         estado:
           type: string
           enum: [DISPONIBLE, OCUPADO]
