@@ -13,21 +13,20 @@ from app.validators.pelicula_validator import (
 def listar_peliculas():
     """
     Controlador para listar películas desde la base de datos MySQL (SQL Puro).
+    Soporta filtros por género y búsqueda por título.
+    Si se envían los parámetros 'pagina' o 'limite', se aplica paginación.
+    Si no se especifican, devuelve el catálogo completo (sin capeo).
     """
     try:
-        pagina = request.args.get('pagina', 1, type=int)
-        limite = request.args.get('limite', 10, type=int)
+        pagina_raw = request.args.get('pagina')
+        limite_raw = request.args.get('limite')
         genero = request.args.get('genero', type=str)
-        buscar = request.args.get('buscar', type=str)
+        buscar = request.args.get('buscar', type=str) or request.args.get('titulo', type=str)
         estado = request.args.get('estado', type=str)
 
-        if pagina < 1:
-            pagina = 1
-        if limite < 1:
-            limite = 1
-        if limite > 50:
-            limite = 50
-        offset = (pagina - 1) * limite
+        paginar = (pagina_raw is not None or limite_raw is not None)
+        if limite_raw is not None and str(limite_raw).strip().lower() in ("all", "todos", "none", "0", "-1"):
+            paginar = False
 
         clausulas = []
         parametros = []
@@ -44,22 +43,46 @@ def listar_peliculas():
         count_result = execute_query(count_sql, tuple(parametros), fetchone=True)
         total = count_result["total"] if count_result else 0
 
+        if paginar:
+            try:
+                pagina = int(pagina_raw) if pagina_raw is not None else 1
+            except (ValueError, TypeError):
+                pagina = 1
+            try:
+                limite = int(limite_raw) if limite_raw is not None else 10
+            except (ValueError, TypeError):
+                limite = 10
 
-        sql = f"SELECT id_pelicula, titulo, sinopsis, poster_url, genero, duracion_min, clasificacion FROM peliculas{where_sql} LIMIT %s OFFSET %s"
-        query_params = tuple(parametros) + (limite, offset)
-        peliculas = execute_query(sql, query_params, fetchall=True) or []
-        total_paginas = (total + limite - 1) // limite if total > 0 else 0
+            if pagina < 1:
+                pagina = 1
+            if limite < 1:
+                limite = 1
+            offset = (pagina - 1) * limite
 
-        return jsonify({
-            "status": "success",
-            "data": peliculas,
-            "pagination": {
+            sql = f"SELECT id_pelicula, titulo, sinopsis, poster_url, genero, duracion_min, clasificacion FROM peliculas{where_sql} LIMIT %s OFFSET %s"
+            query_params = tuple(parametros) + (limite, offset)
+            peliculas = execute_query(sql, query_params, fetchall=True) or []
+            total_paginas = (total + limite - 1) // limite if total > 0 else 0
+            paginacion_dict = {
                 "pagina": pagina,
                 "limite": limite,
                 "total": total,
                 "total_paginas": total_paginas,
             }
+        else:
+            sql = f"SELECT id_pelicula, titulo, sinopsis, poster_url, genero, duracion_min, clasificacion FROM peliculas{where_sql}"
+            peliculas = execute_query(sql, tuple(parametros), fetchall=True) or []
+            paginacion_dict = {
+                "pagina": 1,
+                "limite": total,
+                "total": total,
+                "total_paginas": 1 if total > 0 else 0,
+            }
 
+        return jsonify({
+            "status": "success",
+            "data": peliculas,
+            "pagination": paginacion_dict,
         }), 200
 
     except Exception as error:
