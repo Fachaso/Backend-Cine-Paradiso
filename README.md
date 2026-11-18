@@ -9,10 +9,10 @@ Este sistema de venta de entradas está compuesto por dos repositorios complemen
 ## Enlaces del Proyecto
 
 * **Diseño / Mockups:** [https://www.figma.com/proto/sehm8206edP58cDz0Sj8f8/Figma-basics?node-id=3825-988&p=f&t=nzzL0frzXv6JGVMO-1&scaling=min-zoom&content-scaling=fixed&page-id=3825%3A5]
-* **Contrato OpenAPI:** Ver archivo [`swagger.yaml`](./swagger.yaml)[cite: 4, 5]
+* **Contrato OpenAPI:** Ver archivo [`swagger.yaml`](./swagger.yaml)
 * **Backlog del Producto:** [backlog.md](./backlog.md)
 * **Reglas de Negocio y Alcance:** [Reglas de negocio.md](./Reglas%20de%20negocio.md)
-* **Esquema de Base de Datos:** [Tablas y relaciones.md](esta ubicado en el front)
+* **Esquema de Base de Datos:** [Tablas y relaciones.md](./Tablas%20y%20relaciones.md)
 
 ---
 
