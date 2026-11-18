@@ -317,3 +317,16 @@
 
 ### TASK-33 — Pruebas integradas `[BACKEND]` `[FRONTEND]` `[SQL-BD]` `[obligatorio]`
 - [ ] Validación integral de extremo a extremo tras el merge de recuperación de contraseña y reseñas (flujo completo de cliente, validaciones de concurrencia, QR, cancelación, backoffice admin y navegación responsive).
+
+### US-34 — Recuperación y restablecimiento de contraseña por correo electrónico (`#77`) `[BACKEND]` `[FRONTEND]` `[funcionalidad agregada]`
+**Como** usuario registrado, **quiero** solicitar un enlace de recuperación de contraseña a mi correo electrónico **para** poder definir una nueva clave y volver a ingresar a mi cuenta si la olvidé.
+
+**API:** `POST /api/recuperar-password`, `POST /api/restablecer-password`.  
+**Rutas Front:** `GET/POST /recuperar-password`, `GET/POST /restablecer-password/<token>`.  
+**SQL:** `usuarios`.
+
+- [ ] El usuario puede ingresar su email desde `/recuperar-password` y recibe una respuesta neutra sin exponer si el correo existe en la base de datos.
+- [ ] Si el correo está registrado, se envía un email (vía Resend) con un enlace firmado válido por **30 minutos**.
+- [ ] Desde `/restablecer-password/`, el usuario puede ingresar y confirmar una nueva contraseña (mínimo **6 caracteres**) y luego iniciar sesión con ella.
+- [ ] El enlace queda invalidado de un solo uso una vez utilizada la recuperación o pasado el tiempo de expiración.
+- [x] Contrato documentado en `swagger.yaml` (v2.1.0) y reglas de negocio actualizadas en `hito1.md`.
