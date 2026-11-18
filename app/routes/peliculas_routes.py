@@ -1,10 +1,6 @@
 from flask import Blueprint
-from app.controllers.pelicula_controller import (
-    listar_peliculas,
-    obtener_pelicula_por_id,
-    buscar_peliculas_externas,
-    crear_pelicula,
-)
+from app.controllers.pelicula_controller import (listar_peliculas, obtener_pelicula_por_id, buscar_peliculas_externas, crear_pelicula)
+from app.controllers.resena_controller import crear_resena, listar_resenas
 
 pelicula_bp = Blueprint("peliculas", __name__, url_prefix="/api")
 
@@ -15,3 +11,7 @@ pelicula_bp.route("/peliculas", methods=["POST"])(crear_pelicula)
 # Rutas de consulta del catálogo local
 pelicula_bp.route("/peliculas", methods=["GET"])(listar_peliculas)
 pelicula_bp.route("/peliculas/<int:id_pelicula>", methods=["GET"])(obtener_pelicula_por_id)
+
+# Rutas de reseñas (US-28)
+pelicula_bp.route("/peliculas/<int:id_pelicula>/resenas", methods=["GET"])(listar_resenas)
+pelicula_bp.route("/peliculas/<int:id_pelicula>/resenas", methods=["POST"])(crear_resena)
