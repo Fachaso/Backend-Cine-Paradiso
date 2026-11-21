@@ -25,8 +25,10 @@ CREATE TABLE asientos (
     id_sala INT NOT NULL,
     fila VARCHAR(5) NOT NULL,
     numero INT NOT NULL,
+    columna INT NOT NULL,
     FOREIGN KEY (id_sala) REFERENCES salas(id_sala) ON DELETE CASCADE,
-    CONSTRAINT uq_asiento_sala UNIQUE (id_sala, fila, numero)
+    CONSTRAINT uq_asiento_sala UNIQUE (id_sala, fila, numero),
+    CONSTRAINT uq_asiento_columna_sala UNIQUE (id_sala, fila, columna)
 );
 
 -- 4. Películas (Cargadas exclusivamente desde OMDb / TMDb vía Backend)

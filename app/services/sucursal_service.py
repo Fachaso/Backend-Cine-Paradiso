@@ -16,9 +16,7 @@ def obtener_salas_de_sucursal(id_sucursal):
 
 
 def generar_etiqueta_fila(indice):
-    """Convierte 1, 26 y 27 en A, Z y AA
-    con el limite actual de 200 butacas solo seria necesario hasta la fila T
-    pero se deja la funcion para que pueda crecer un poco mas sin problemas"""
+    """Convierte 1, 26 y 27 en A, Z y AA."""
     etiqueta = ""
 
     while indice > 0:
@@ -28,17 +26,33 @@ def generar_etiqueta_fila(indice):
     return etiqueta
 
 
-def generar_asientos(capacidad):
+def generar_asientos(filas):
     asientos = []
+    ancho_izquierdo = max(fila["bloques"][0] for fila in filas)
+    ancho_central = max(fila["bloques"][1] for fila in filas)
+    ancho_derecho = max(fila["bloques"][2] for fila in filas)
 
-    for indice in range(capacidad):
-        fila = generar_etiqueta_fila((indice // 10) + 1)
-        numero = str((indice % 10) + 1)
+    inicio_central = ancho_izquierdo + (1 if ancho_izquierdo else 0) + 1
+    inicio_derecho = inicio_central + ancho_central + (1 if ancho_derecho else 0)
 
-        asientos.append({
-            "fila": fila,
-            "numero": numero
-        })
+    for indice, fila_configurada in enumerate(filas, start=1):
+        fila = generar_etiqueta_fila(indice)
+        izquierdo, central, derecho = fila_configurada["bloques"]
+        columnas = (
+            list(range(ancho_izquierdo - izquierdo + 1, ancho_izquierdo + 1))
+            + list(range(
+                inicio_central + (ancho_central - central) // 2,
+                inicio_central + (ancho_central - central) // 2 + central
+            ))
+            + list(range(inicio_derecho, inicio_derecho + derecho))
+        )
+
+        for numero, columna in enumerate(columnas, start=1):
+            asientos.append({
+                "fila": fila,
+                "numero": numero,
+                "columna": columna
+            })
 
     return asientos
 
@@ -52,7 +66,7 @@ def crear_sala(id_sucursal, datos_sala):
     ):
         return None, "SALA_DUPLICADA"
 
-    asientos = generar_asientos(datos_sala["capacidad"])
+    asientos = generar_asientos(datos_sala["filas"])
 
     return sucursal_repository.crear_sala_con_asientos(
         id_sucursal, datos_sala, asientos

@@ -103,14 +103,15 @@ def sala_existe_en_sucursal(id_sucursal, nombre):
 
 
 def crear_sala_con_asientos(id_sucursal, datos_sala, asientos):
-
     conexion = None
     cursor = None
+    id_sala = None
+
     try:
         conexion = get_db_connection()
-        #preguntar si es necesario poner autocommit en true
         conexion.autocommit = True
         cursor = conexion.cursor()
+        capacidad = len(asientos)
 
         cursor.execute(
             "INSERT INTO salas (id_sucursal, nombre, capacidad) "
@@ -118,7 +119,7 @@ def crear_sala_con_asientos(id_sucursal, datos_sala, asientos):
             (
                 id_sucursal,
                 datos_sala["nombre"],
-                datos_sala["capacidad"]
+                capacidad
             )
         )
 
@@ -126,12 +127,13 @@ def crear_sala_con_asientos(id_sucursal, datos_sala, asientos):
 
         for asiento in asientos:
             cursor.execute(
-                "INSERT INTO asientos (id_sala, fila, numero) "
-                "VALUES (%s, %s, %s)",
+                "INSERT INTO asientos (id_sala, fila, numero, columna) "
+                "VALUES (%s, %s, %s, %s)",
                 (
                     id_sala,
                     asiento["fila"],
-                    asiento["numero"]
+                    asiento["numero"],
+                    asiento["columna"]
                 )
             )
 
@@ -139,9 +141,17 @@ def crear_sala_con_asientos(id_sucursal, datos_sala, asientos):
             "id_sala": id_sala,
             "id_sucursal": id_sucursal,
             "nombre": datos_sala["nombre"],
-            "capacidad": datos_sala["capacidad"],
+            "capacidad": capacidad,
             "asientos_creados": len(asientos)
         }
+
+    except Exception:
+        if id_sala is not None and cursor is not None:
+            cursor.execute(
+                "DELETE FROM salas WHERE id_sala = %s",
+                (id_sala,)
+            )
+        raise
 
     finally:
         if cursor:
@@ -155,16 +165,23 @@ def existen_funciones_de_sala(id_sala):
     conexion = None
     cursor = None
     existe = False
+
     try:
         conexion = get_db_connection()
         cursor = conexion.cursor()
-        cursor.execute("SELECT 1 FROM funciones WHERE id_sala = %s LIMIT 1", (id_sala,))
+        cursor.execute(
+            "SELECT 1 FROM funciones WHERE id_sala = %s LIMIT 1",
+            (id_sala,)
+        )
         existe = cursor.fetchone() is not None
+
     finally:
         if cursor:
             cursor.close()
+
         if conexion and conexion.is_connected():
             conexion.close()
+
     return existe
 
 
@@ -172,6 +189,7 @@ def existen_entradas_de_sala(id_sala):
     conexion = None
     cursor = None
     existe = False
+
     try:
         conexion = get_db_connection()
         cursor = conexion.cursor()
@@ -181,11 +199,14 @@ def existen_entradas_de_sala(id_sala):
             (id_sala,)
         )
         existe = cursor.fetchone() is not None
+
     finally:
         if cursor:
             cursor.close()
+
         if conexion and conexion.is_connected():
             conexion.close()
+
     return existe
 
 
@@ -193,19 +214,22 @@ def eliminar_sala(id_sucursal, id_sala):
     conexion = None
     cursor = None
     filas_eliminadas = 0
+
     try:
         conexion = get_db_connection()
         conexion.autocommit = True
         cursor = conexion.cursor()
         cursor.execute(
-    "DELETE FROM salas WHERE id_sala = %s AND id_sucursal = %s",
-    
-    (id_sala, id_sucursal)
+            "DELETE FROM salas WHERE id_sala = %s AND id_sucursal = %s",
+            (id_sala, id_sucursal)
         )
         filas_eliminadas = cursor.rowcount
+
     finally:
         if cursor:
             cursor.close()
+
         if conexion and conexion.is_connected():
             conexion.close()
+
     return filas_eliminadas
