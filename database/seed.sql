@@ -1,3 +1,5 @@
+-- Datos de prueba para una base vacía con el esquema actualizado.
+-- Las funciones se programan dos meses después de ejecutar este archivo.
 USE cine_paradiso;
 
 -- 1. Sucursales de Cine Paradiso
@@ -13,21 +15,21 @@ INSERT INTO salas (id_sala, id_sucursal, nombre, capacidad) VALUES
 (3, 2, 'Sala 1 Norte', 20);
 
 -- 3. Asientos de cada sala (Coinciden con la capacidad de cada sala)
--- Sala 1 (30 asientos: Filas A, B y C de 10 butacas cada una)
-INSERT INTO asientos (id_sala, fila, numero) VALUES
-(1, 'A', 1), (1, 'A', 2), (1, 'A', 3), (1, 'A', 4), (1, 'A', 5), (1, 'A', 6), (1, 'A', 7), (1, 'A', 8), (1, 'A', 9), (1, 'A', 10),
-(1, 'B', 1), (1, 'B', 2), (1, 'B', 3), (1, 'B', 4), (1, 'B', 5), (1, 'B', 6), (1, 'B', 7), (1, 'B', 8), (1, 'B', 9), (1, 'B', 10),
-(1, 'C', 1), (1, 'C', 2), (1, 'C', 3), (1, 'C', 4), (1, 'C', 5), (1, 'C', 6), (1, 'C', 7), (1, 'C', 8), (1, 'C', 9), (1, 'C', 10);
+-- Sala 1: filas A, B y C con bloques [2, 6, 2] y dos pasillos.
+INSERT INTO asientos (id_sala, fila, numero, columna) VALUES
+(1, 'A', 1, 1), (1, 'A', 2, 2), (1, 'A', 3, 4), (1, 'A', 4, 5), (1, 'A', 5, 6), (1, 'A', 6, 7), (1, 'A', 7, 8), (1, 'A', 8, 9), (1, 'A', 9, 11), (1, 'A', 10, 12),
+(1, 'B', 1, 1), (1, 'B', 2, 2), (1, 'B', 3, 4), (1, 'B', 4, 5), (1, 'B', 5, 6), (1, 'B', 6, 7), (1, 'B', 7, 8), (1, 'B', 8, 9), (1, 'B', 9, 11), (1, 'B', 10, 12),
+(1, 'C', 1, 1), (1, 'C', 2, 2), (1, 'C', 3, 4), (1, 'C', 4, 5), (1, 'C', 5, 6), (1, 'C', 6, 7), (1, 'C', 7, 8), (1, 'C', 8, 9), (1, 'C', 9, 11), (1, 'C', 10, 12);
 
--- Sala 2 (20 asientos: Filas A y B de 10 butacas cada una)
-INSERT INTO asientos (id_sala, fila, numero) VALUES
-(2, 'A', 1), (2, 'A', 2), (2, 'A', 3), (2, 'A', 4), (2, 'A', 5), (2, 'A', 6), (2, 'A', 7), (2, 'A', 8), (2, 'A', 9), (2, 'A', 10),
-(2, 'B', 1), (2, 'B', 2), (2, 'B', 3), (2, 'B', 4), (2, 'B', 5), (2, 'B', 6), (2, 'B', 7), (2, 'B', 8), (2, 'B', 9), (2, 'B', 10);
+-- Sala 2: filas A y B con un bloque central de 10 butacas.
+INSERT INTO asientos (id_sala, fila, numero, columna) VALUES
+(2, 'A', 1, 1), (2, 'A', 2, 2), (2, 'A', 3, 3), (2, 'A', 4, 4), (2, 'A', 5, 5), (2, 'A', 6, 6), (2, 'A', 7, 7), (2, 'A', 8, 8), (2, 'A', 9, 9), (2, 'A', 10, 10),
+(2, 'B', 1, 1), (2, 'B', 2, 2), (2, 'B', 3, 3), (2, 'B', 4, 4), (2, 'B', 5, 5), (2, 'B', 6, 6), (2, 'B', 7, 7), (2, 'B', 8, 8), (2, 'B', 9, 9), (2, 'B', 10, 10);
 
--- Sala 3 (20 asientos: Filas A y B de 10 butacas cada una)
-INSERT INTO asientos (id_sala, fila, numero) VALUES
-(3, 'A', 1), (3, 'A', 2), (3, 'A', 3), (3, 'A', 4), (3, 'A', 5), (3, 'A', 6), (3, 'A', 7), (3, 'A', 8), (3, 'A', 9), (3, 'A', 10),
-(3, 'B', 1), (3, 'B', 2), (3, 'B', 3), (3, 'B', 4), (3, 'B', 5), (3, 'B', 6), (3, 'B', 7), (3, 'B', 8), (3, 'B', 9), (3, 'B', 10);
+-- Sala 3: filas A y B con un bloque central de 10 butacas.
+INSERT INTO asientos (id_sala, fila, numero, columna) VALUES
+(3, 'A', 1, 1), (3, 'A', 2, 2), (3, 'A', 3, 3), (3, 'A', 4, 4), (3, 'A', 5, 5), (3, 'A', 6, 6), (3, 'A', 7, 7), (3, 'A', 8, 8), (3, 'A', 9, 9), (3, 'A', 10, 10),
+(3, 'B', 1, 1), (3, 'B', 2, 2), (3, 'B', 3, 3), (3, 'B', 4, 4), (3, 'B', 5, 5), (3, 'B', 6, 6), (3, 'B', 7, 7), (3, 'B', 8, 8), (3, 'B', 9, 9), (3, 'B', 10, 10);
 
 -- 4. Usuarios iniciales (Roles ADMIN y CLIENTE)
 INSERT INTO usuarios (id_usuario, nombre, email, password_hash, rol) VALUES
@@ -57,6 +59,6 @@ INSERT INTO peliculas (titulo, sinopsis, poster_url, genero, duracion_min, clasi
 
 -- Funciones
 INSERT INTO funciones (id_pelicula, id_sala, fecha_hora, precio_entrada) VALUES
-(1, 1, '2026-11-05 18:00:00', 4500.00),
-(2, 1, '2026-11-05 21:30:00', 5000.00),
-(3, 2, '2026-11-06 19:00:00', 4500.00);
+(1, 1, TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 2 MONTH), '18:00:00'), 4500.00),
+(2, 1, TIMESTAMP(DATE_ADD(CURDATE(), INTERVAL 2 MONTH), '21:30:00'), 5000.00),
+(3, 2, TIMESTAMP(DATE_ADD(DATE_ADD(CURDATE(), INTERVAL 2 MONTH), INTERVAL 1 DAY), '19:00:00'), 4500.00);
