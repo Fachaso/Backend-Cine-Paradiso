@@ -20,3 +20,15 @@ def insertar_pelicula(titulo, sinopsis, poster_url, genero, duracion_min, clasif
     parametros = (titulo, sinopsis, poster_url, genero, duracion_min, clasificacion)
     id_creado = execute_query(consulta_sql, parametros, commit=True)
     return id_creado
+
+def actualizar_poster_pelicula(id_pelicula, poster_url):
+    """
+    Actualiza únicamente la URL del póster de una película.
+    """
+    consulta_sql = """
+        UPDATE peliculas
+        SET poster_url = %s
+        WHERE id_pelicula = %s
+    """
+    parametros = (poster_url, id_pelicula)
+    return execute_query(consulta_sql, parametros, commit=True)

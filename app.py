@@ -75,6 +75,11 @@ for estado in (400, 401, 403, 404, 405, 409, 500):
 
 if __name__ == "__main__":
     puerto = int(os.getenv("PORT", "5000"))
+    try:
+        from app.services.sincronizacion_peliculas_service import sincronizar_posteres_iniciales
+        sincronizar_posteres_iniciales()
+    except Exception as error:
+        print(f"No se pudieron sincronizar los pósteres iniciales: {error}")
     debug_mode = os.getenv("FLASK_DEBUG", "True").lower() in ["true", "1", "t"]
     
     app.run(host="0.0.0.0", port=puerto, debug=debug_mode)

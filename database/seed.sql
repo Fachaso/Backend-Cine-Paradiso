@@ -51,11 +51,11 @@ WHERE email = 'admin@cineparadiso.com';
 
 -- Peliculas
 INSERT INTO peliculas (titulo, sinopsis, poster_url, genero, duracion_min, clasificacion) VALUES
-('Inception', 'Un ladrón roba secretos a través del intercambio de sueños.', 'https://via.placeholder.com/300x450?text=Inception', 'Ciencia Ficción', 148, 'PG-13'),
-('Interstellar', 'Un equipo de exploradores viaja a través de un agujero de gusano.', 'https://via.placeholder.com/300x450?text=Interstellar', 'Ciencia Ficción', 169, 'PG-13'),
-('The Dark Knight', 'Batman enfrenta a un villano caótico que pone a prueba a la ciudad.', 'https://via.placeholder.com/300x450?text=The+Dark+Knight', 'Acción', 152, 'PG-13'),
-('Spider-Man: Across the Spider-Verse', 'Miles Morales es catapultado a través del Multiverso.', 'https://via.placeholder.com/300x450?text=Spider-Man', 'Animación', 140, 'APT'),
-('Avatar: The Way of Water', 'Jake Sully vive con su familia en el planeta Pandora.', 'https://via.placeholder.com/300x450?text=Avatar', 'Aventura', 192, 'PG-13');
+('Inception', 'Un ladrón roba secretos a través del intercambio de sueños.', NULL, 'Ciencia Ficción', 148, 'PG-13'),
+('Interstellar', 'Un equipo de exploradores viaja a través de un agujero de gusano.', NULL, 'Ciencia Ficción', 169, 'PG-13'),
+('The Dark Knight', 'Batman enfrenta a un villano caótico que pone a prueba a la ciudad.', NULL, 'Acción', 152, 'PG-13'),
+('Spider-Man: Across the Spider-Verse', 'Miles Morales es catapultado a través del Multiverso.', NULL, 'Animación', 140, 'APT'),
+('Avatar: The Way of Water', 'Jake Sully vive con su familia en el planeta Pandora.', NULL, 'Aventura', 192, 'PG-13');
 
 -- Funciones
 INSERT INTO funciones (id_pelicula, id_sala, fecha_hora, precio_entrada) VALUES
