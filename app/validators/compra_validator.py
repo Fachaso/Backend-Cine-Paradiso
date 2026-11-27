@@ -1,6 +1,7 @@
 CAMPOS_CREAR = ("id_funcion", "asientos_ids", "servicios")
 CAMPOS_SERVICIO_PERMITIDOS = ("id_servicio", "cantidad")
 CANTIDAD_MAXIMA_SERVICIO = 10
+MAXIMO_ASIENTOS = 6
 
 
 def _es_entero_positivo(valor):
@@ -59,6 +60,8 @@ def validar_solicitud_compra(datos):
         return None, "Cada asiento_id debe ser un entero positivo"
     if len(asientos) != len(set(asientos)):
         return None, "No se permiten asientos_ids repetidos"
+    if len(asientos) > MAXIMO_ASIENTOS:
+        return None, f"No se pueden comprar más de {MAXIMO_ASIENTOS} butacas por compra"
 
     servicios, mensaje = _validar_servicios(datos.get("servicios", []))
     if mensaje:
